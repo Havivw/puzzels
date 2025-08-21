@@ -304,8 +304,7 @@ export class HybridDataManager {
   static async updateHintPasswordFailure(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining?: number }> {
     try {
       if (this.isProduction()) {
-        // TODO: Implement in DatabaseManager
-        return { rateLimited: false };
+        return await DatabaseManager.updateHintPasswordFailure(uuid);
       }
 
       const users = await this.getUsers();
@@ -333,10 +332,10 @@ export class HybridDataManager {
       user.rateLimitData.hintPasswordFailures += 1;
       user.lastActivity = new Date().toISOString();
       
-      // Check if user should be rate limited (5 consecutive hint password failures)
-      if (user.rateLimitData.hintPasswordFailures >= 5) {
+      // Check if user should be rate limited (3 consecutive hint password failures)
+      if (user.rateLimitData.hintPasswordFailures >= 3) {
         const lockUntil = new Date();
-        lockUntil.setMinutes(lockUntil.getMinutes() + 5); // 5 minute lock for hint passwords
+        lockUntil.setMinutes(lockUntil.getMinutes() + 25); // 25 minute lock for hint passwords
         user.rateLimitData.hintPasswordLockedUntil = lockUntil.toISOString();
         
         users[userIndex] = user;
@@ -344,7 +343,7 @@ export class HybridDataManager {
         
         return { 
           rateLimited: true, 
-          lockTimeRemaining: 300 // 5 minutes in seconds
+          lockTimeRemaining: 1500 // 25 minutes in seconds
         };
       }
       
@@ -361,8 +360,7 @@ export class HybridDataManager {
   static async checkHintPasswordRateLimit(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining: number }> {
     try {
       if (this.isProduction()) {
-        // TODO: Implement in DatabaseManager
-        return { rateLimited: false, lockTimeRemaining: 0 };
+        return await DatabaseManager.checkHintPasswordRateLimit(uuid);
       }
 
       const users = await this.getUsers();
@@ -401,8 +399,7 @@ export class HybridDataManager {
   static async resetHintPasswordFailures(uuid: string): Promise<void> {
     try {
       if (this.isProduction()) {
-        // TODO: Implement in DatabaseManager
-        return;
+        return await DatabaseManager.resetHintPasswordFailures(uuid);
       }
 
       const users = await this.getUsers();

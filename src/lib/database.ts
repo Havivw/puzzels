@@ -136,7 +136,8 @@ export class DatabaseManager {
           completedQuestions: [],
           rateLimitData: {
             consecutiveFailures: 0,
-            totalFailures: 0
+            totalFailures: 0,
+            hintPasswordFailures: 0
           },
           createdAt: new Date().toISOString(),
           lastActivity: new Date().toISOString()
@@ -185,6 +186,9 @@ export class DatabaseManager {
         if (user.rateLimitData) {
           user.rateLimitData.consecutiveFailures = 0;
           delete user.rateLimitData.lockedUntil;
+          // Also reset hint password failures on correct answer
+          user.rateLimitData.hintPasswordFailures = 0;
+          delete user.rateLimitData.hintPasswordLockedUntil;
         }
         
         user.lastActivity = new Date().toISOString();
@@ -208,7 +212,7 @@ export class DatabaseManager {
 
         const user = users[userIndex];
         if (!user.rateLimitData) {
-          user.rateLimitData = { consecutiveFailures: 0, totalFailures: 0 };
+          user.rateLimitData = { consecutiveFailures: 0, totalFailures: 0, hintPasswordFailures: 0 };
         }
 
         user.rateLimitData.consecutiveFailures += 1;
@@ -258,6 +262,103 @@ export class DatabaseManager {
     } catch (error) {
       console.error('Error checking rate limit:', error);
       return { rateLimited: false, lockTimeRemaining: 0 };
+    }
+  }
+
+  // Hint password rate limiting
+  static async updateHintPasswordFailure(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining?: number }> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const users = await this.getUsers();
+        const userIndex = users.findIndex(u => u.uuid === uuid);
+        if (userIndex === -1) return { rateLimited: false };
+
+        const user = users[userIndex];
+        if (!user.rateLimitData) {
+          user.rateLimitData = { consecutiveFailures: 0, totalFailures: 0, hintPasswordFailures: 0 };
+        }
+
+        // Initialize hint password failures if not exists
+        if (user.rateLimitData.hintPasswordFailures === undefined) {
+          user.rateLimitData.hintPasswordFailures = 0;
+        }
+
+        user.rateLimitData.hintPasswordFailures += 1;
+        user.lastActivity = new Date().toISOString();
+
+        // Check if user should be rate limited (3 consecutive hint password failures)
+        if (user.rateLimitData.hintPasswordFailures >= 3) {
+          const lockUntil = new Date();
+          lockUntil.setMinutes(lockUntil.getMinutes() + 25); // 25 minute lock for hint passwords
+          user.rateLimitData.hintPasswordLockedUntil = lockUntil.toISOString();
+          users[userIndex] = user;
+          await this.saveUsers(users);
+          return { rateLimited: true, lockTimeRemaining: 1500 }; // 25 minutes in seconds
+        }
+
+        users[userIndex] = user;
+        await this.saveUsers(users);
+        return { rateLimited: false };
+      }
+      return { rateLimited: false };
+    } catch (error) {
+      console.error('Error updating hint password failure:', error);
+      return { rateLimited: false };
+    }
+  }
+
+  static async checkHintPasswordRateLimit(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining: number }> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const users = await this.getUsers();
+        const user = users.find(u => u.uuid === uuid);
+        
+        if (!user || !user.rateLimitData || !user.rateLimitData.hintPasswordLockedUntil) {
+          return { rateLimited: false, lockTimeRemaining: 0 };
+        }
+        
+        const lockUntil = new Date(user.rateLimitData.hintPasswordLockedUntil);
+        const now = new Date();
+        
+        if (now < lockUntil) {
+          const lockTimeRemaining = Math.ceil((lockUntil.getTime() - now.getTime()) / 1000);
+          return { 
+            rateLimited: true, 
+            lockTimeRemaining 
+          };
+        } else {
+          // Lock has expired, reset hint password failures
+          const userIndex = users.findIndex(u => u.uuid === uuid);
+          if (userIndex !== -1) {
+            users[userIndex].rateLimitData!.hintPasswordFailures = 0;
+            delete users[userIndex].rateLimitData!.hintPasswordLockedUntil;
+            await this.saveUsers(users);
+          }
+          
+          return { rateLimited: false, lockTimeRemaining: 0 };
+        }
+      }
+      return { rateLimited: false, lockTimeRemaining: 0 };
+    } catch (error) {
+      console.error('Error checking hint password rate limit:', error);
+      return { rateLimited: false, lockTimeRemaining: 0 };
+    }
+  }
+
+  static async resetHintPasswordFailures(uuid: string): Promise<void> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const users = await this.getUsers();
+        const userIndex = users.findIndex(u => u.uuid === uuid);
+        
+        if (userIndex !== -1 && users[userIndex].rateLimitData) {
+          users[userIndex].rateLimitData!.hintPasswordFailures = 0;
+          delete users[userIndex].rateLimitData!.hintPasswordLockedUntil;
+          await this.saveUsers(users);
+        }
+      }
+    } catch (error) {
+      console.error('Error resetting hint password failures:', error);
     }
   }
 
