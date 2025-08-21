@@ -300,6 +300,124 @@ export class HybridDataManager {
     }
   }
 
+  // Hint password rate limiting
+  static async updateHintPasswordFailure(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining?: number }> {
+    try {
+      if (this.isProduction()) {
+        // TODO: Implement in DatabaseManager
+        return { rateLimited: false };
+      }
+
+      const users = await this.getUsers();
+      const userIndex = users.findIndex(u => u.uuid === uuid);
+      
+      if (userIndex === -1) return { rateLimited: false };
+      
+      const user = users[userIndex];
+      
+      // Initialize rate limit data if not exists
+      if (!user.rateLimitData) {
+        user.rateLimitData = {
+          consecutiveFailures: 0,
+          totalFailures: 0,
+          hintPasswordFailures: 0
+        };
+      }
+      
+      // Initialize hint password failures if not exists
+      if (user.rateLimitData.hintPasswordFailures === undefined) {
+        user.rateLimitData.hintPasswordFailures = 0;
+      }
+      
+      // Increment hint password failure count
+      user.rateLimitData.hintPasswordFailures += 1;
+      user.lastActivity = new Date().toISOString();
+      
+      // Check if user should be rate limited (5 consecutive hint password failures)
+      if (user.rateLimitData.hintPasswordFailures >= 5) {
+        const lockUntil = new Date();
+        lockUntil.setMinutes(lockUntil.getMinutes() + 5); // 5 minute lock for hint passwords
+        user.rateLimitData.hintPasswordLockedUntil = lockUntil.toISOString();
+        
+        users[userIndex] = user;
+        await this.saveUsers(users);
+        
+        return { 
+          rateLimited: true, 
+          lockTimeRemaining: 300 // 5 minutes in seconds
+        };
+      }
+      
+      users[userIndex] = user;
+      await this.saveUsers(users);
+      
+      return { rateLimited: false };
+    } catch (error) {
+      console.error('Error updating hint password failure:', error);
+      return { rateLimited: false };
+    }
+  }
+
+  static async checkHintPasswordRateLimit(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining: number }> {
+    try {
+      if (this.isProduction()) {
+        // TODO: Implement in DatabaseManager
+        return { rateLimited: false, lockTimeRemaining: 0 };
+      }
+
+      const users = await this.getUsers();
+      const user = users.find(u => u.uuid === uuid);
+      
+      if (!user || !user.rateLimitData || !user.rateLimitData.hintPasswordLockedUntil) {
+        return { rateLimited: false, lockTimeRemaining: 0 };
+      }
+      
+      const lockUntil = new Date(user.rateLimitData.hintPasswordLockedUntil);
+      const now = new Date();
+      
+      if (now < lockUntil) {
+        const lockTimeRemaining = Math.ceil((lockUntil.getTime() - now.getTime()) / 1000);
+        return { 
+          rateLimited: true, 
+          lockTimeRemaining 
+        };
+      } else {
+        // Lock has expired, reset hint password failures
+        const userIndex = users.findIndex(u => u.uuid === uuid);
+        if (userIndex !== -1) {
+          users[userIndex].rateLimitData!.hintPasswordFailures = 0;
+          delete users[userIndex].rateLimitData!.hintPasswordLockedUntil;
+          await this.saveUsers(users);
+        }
+        
+        return { rateLimited: false, lockTimeRemaining: 0 };
+      }
+    } catch (error) {
+      console.error('Error checking hint password rate limit:', error);
+      return { rateLimited: false, lockTimeRemaining: 0 };
+    }
+  }
+
+  static async resetHintPasswordFailures(uuid: string): Promise<void> {
+    try {
+      if (this.isProduction()) {
+        // TODO: Implement in DatabaseManager
+        return;
+      }
+
+      const users = await this.getUsers();
+      const userIndex = users.findIndex(u => u.uuid === uuid);
+      
+      if (userIndex !== -1 && users[userIndex].rateLimitData) {
+        users[userIndex].rateLimitData!.hintPasswordFailures = 0;
+        delete users[userIndex].rateLimitData!.hintPasswordLockedUntil;
+        await this.saveUsers(users);
+      }
+    } catch (error) {
+      console.error('Error resetting hint password failures:', error);
+    }
+  }
+
   // Dashboard data
   static async getDashboardData(): Promise<{
     totalUsers: number;

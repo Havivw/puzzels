@@ -23,6 +23,23 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
+    // Check hint password rate limit
+    const hintRateLimitCheck = await HybridDataManager.checkHintPasswordRateLimit(uuid);
+    if (hintRateLimitCheck.rateLimited) {
+      const response: HintResponse = {
+        success: false,
+        requiresPassword: true,
+        rateLimited: true,
+        lockTimeRemaining: hintRateLimitCheck.lockTimeRemaining,
+        error: 'Too many failed password attempts. Please wait before trying again.'
+      };
+      
+      return NextResponse.json<ApiResponse<HintResponse>>({
+        success: true,
+        data: response
+      });
+    }
+
     const questions = await HybridDataManager.getQuestions();
     
     // Find the question
@@ -47,16 +64,26 @@ export async function POST(request: NextRequest) {
     // Check if hints require password
     if (hintPassword && hintPassword.trim() !== '') {
       if (!password || password !== hintPassword) {
+        // Update hint password failure count
+        const rateLimitResult = await HybridDataManager.updateHintPasswordFailure(uuid);
+        
         const response: HintResponse = {
           success: false,
           requiresPassword: true,
-          error: 'Incorrect password or password required'
+          rateLimited: rateLimitResult.rateLimited,
+          lockTimeRemaining: rateLimitResult.lockTimeRemaining,
+          error: rateLimitResult.rateLimited 
+            ? 'Too many failed password attempts. Account locked temporarily.'
+            : 'Incorrect password or password required'
         };
         
         return NextResponse.json<ApiResponse<HintResponse>>({
           success: true,
           data: response
         });
+      } else {
+        // Reset hint password failures on successful password
+        await HybridDataManager.resetHintPasswordFailures(uuid);
       }
     }
 

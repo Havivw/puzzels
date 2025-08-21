@@ -166,9 +166,22 @@ export default function PuzzleInterface({ uuid }: PuzzleInterfaceProps) {
           setHintPassword('');
           setHintsRequirePassword(false);
           setFeedback({ type: 'success', message: '🔓 HINTS UNLOCKED!' });
+        } else if (hintData.rateLimited) {
+          setHintsRequirePassword(true);
+          const minutes = Math.floor((hintData.lockTimeRemaining || 0) / 60);
+          const seconds = (hintData.lockTimeRemaining || 0) % 60;
+          setFeedback({ 
+            type: 'error', 
+            message: `🚫 TOO MANY FAILED PASSWORD ATTEMPTS! Hint access locked for ${minutes}m ${seconds}s.` 
+          });
         } else if (hintData.requiresPassword) {
           setHintsRequirePassword(true);
-          setFeedback({ type: 'warning', message: '🔒 ENCRYPTED HINTS! Password required for hints.' });
+          setFeedback({ 
+            type: 'warning', 
+            message: hintData.error?.includes('Incorrect password') 
+              ? '❌ INCORRECT PASSWORD! Try again.' 
+              : '🔒 ENCRYPTED HINTS! Password required for hints.' 
+          });
         } else {
           setFeedback({ type: 'error', message: hintData.error || 'Failed to access hints' });
         }

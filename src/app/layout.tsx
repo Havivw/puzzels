@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pazzel - Interactive Puzzle Challenge",
+  title: "Enigma Hub - Interactive Puzzle Challenge",
   description: "Challenge your mind with interactive puzzles and riddles",
 };
 

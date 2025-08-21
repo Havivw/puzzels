@@ -1,4 +1,4 @@
-// Core data types for the Pazzel system
+// Core data types for the Enigma Hub system
 
 export interface Question {
   id: string;
@@ -51,6 +51,8 @@ export interface User {
     consecutiveFailures: number;
     lockedUntil?: string; // ISO timestamp when lock expires
     totalFailures: number;
+    hintPasswordFailures?: number; // Failed hint password attempts
+    hintPasswordLockedUntil?: string; // ISO timestamp when hint password lock expires
   };
 }
 
@@ -100,6 +102,8 @@ export interface HintResponse {
   success: boolean;
   hints?: string[]; // All hints for the question
   requiresPassword: boolean;
+  rateLimited?: boolean; // If hint password attempts are rate limited
+  lockTimeRemaining?: number; // Seconds remaining in hint password lock
   error?: string;
 }
 
