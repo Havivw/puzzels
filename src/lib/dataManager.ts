@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Question, User, AdminConfig, ValidationResult } from '@/types';
+import { DatabaseManager } from './database';
 
 const DATA_DIR = path.join(process.cwd(), 'src/data');
 
@@ -16,7 +17,32 @@ export class DataManager {
       return JSON.parse(data);
     } catch (error) {
       console.error('Error reading questions:', error);
-      return [];
+      // Return default questions if file doesn't exist
+      return [
+        {
+          id: "q1",
+          text: "What has keys but can't open locks?",
+          answer: "piano",
+          hints: ["It makes music", "You press them to create sound"],
+          hintPassword: "music123",
+          order: 1
+        },
+        {
+          id: "q2", 
+          text: "I am tall when I am young, and short when I am old. What am I?",
+          answer: "candle",
+          hints: ["I give light", "I melt as time passes"],
+          hintPassword: "light789",
+          order: 2
+        },
+        {
+          id: "q3",
+          text: "What gets wet while drying?",
+          answer: "towel",
+          hints: ["Used in bathrooms", "Made of fabric"],
+          order: 3
+        }
+      ];
     }
   }
 
@@ -26,22 +52,50 @@ export class DataManager {
       return JSON.parse(data);
     } catch (error) {
       console.error('Error reading users:', error);
-      return [];
+      // Return default demo user if file doesn't exist
+      return [
+        {
+          uuid: "user-demo-1234-5678-abcd-efgh",
+          name: "Demo User",
+          currentQuestion: 1,
+          completedQuestions: [],
+          createdAt: new Date().toISOString(),
+          lastActivity: new Date().toISOString()
+        }
+      ];
     }
   }
 
   static getConfig(): AdminConfig {
+    // In production (Vercel), use environment variables
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        adminUuid: process.env.ADMIN_UUID || 'admin-b290-6877-42c1-afe1-0e40f0098df6',
+        dashboardUuid: process.env.DASHBOARD_UUID || 'dash-52dc-2330-49f1-89e9-00fb6440cd5b'
+      };
+    }
+
+    // In development, use JSON file
     try {
       const data = fs.readFileSync(this.configPath, 'utf8');
       return JSON.parse(data);
     } catch (error) {
       console.error('Error reading config:', error);
-      return { adminUuid: '', dashboardUuid: '' };
+      return {
+        adminUuid: 'admin-b290-6877-42c1-afe1-0e40f0098df6',
+        dashboardUuid: 'dash-52dc-2330-49f1-89e9-00fb6440cd5b'
+      };
     }
   }
 
   // Write operations
   static saveQuestions(questions: Question[]): boolean {
+    // In production, cannot save to filesystem
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('Cannot save questions in production environment. Use database or external storage.');
+      return false;
+    }
+
     try {
       fs.writeFileSync(this.questionsPath, JSON.stringify(questions, null, 2));
       return true;
@@ -52,6 +106,12 @@ export class DataManager {
   }
 
   static saveUsers(users: User[]): boolean {
+    // In production, cannot save to filesystem
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('Cannot save users in production environment. Use database or external storage.');
+      return false;
+    }
+
     try {
       fs.writeFileSync(this.usersPath, JSON.stringify(users, null, 2));
       return true;
@@ -246,6 +306,13 @@ export class DataManager {
   }
 
   static updateConfig(newConfig: AdminConfig): boolean {
+    // In production, cannot update config (read-only filesystem)
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('Cannot update config in production environment. Use environment variables.');
+      return false;
+    }
+
+    // In development, update JSON file
     try {
       fs.writeFileSync(this.configPath, JSON.stringify(newConfig, null, 2));
       return true;

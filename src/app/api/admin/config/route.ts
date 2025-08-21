@@ -91,10 +91,18 @@ export async function PUT(request: NextRequest) {
         data: newConfig
       });
     } else {
-      return NextResponse.json<ApiResponse<null>>({
-        success: false,
-        error: 'Failed to update configuration'
-      }, { status: 500 });
+      // Check if we're in production
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json<ApiResponse<null>>({
+          success: false,
+          error: 'Cannot update config in production environment. Use environment variables.'
+        }, { status: 400 });
+      } else {
+        return NextResponse.json<ApiResponse<null>>({
+          success: false,
+          error: 'Failed to update configuration'
+        }, { status: 500 });
+      }
     }
 
   } catch (error) {

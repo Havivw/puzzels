@@ -83,10 +83,18 @@ export async function POST(request: NextRequest) {
         data: newUser!
       });
     } else {
-      return NextResponse.json<ApiResponse<null>>({
-        success: false,
-        error: 'Failed to create user'
-      }, { status: 500 });
+      // Check if we're in production
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json<ApiResponse<null>>({
+          success: false,
+          error: 'User management is not available in production. Users are read-only in the deployed version.'
+        }, { status: 400 });
+      } else {
+        return NextResponse.json<ApiResponse<null>>({
+          success: false,
+          error: 'Failed to create user'
+        }, { status: 500 });
+      }
     }
 
   } catch (error) {

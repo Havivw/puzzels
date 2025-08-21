@@ -70,10 +70,18 @@ export async function POST(request: NextRequest) {
         data: questions
       });
     } else {
-      return NextResponse.json<ApiResponse<null>>({
-        success: false,
-        error: 'Failed to save questions'
-      }, { status: 500 });
+      // Check if we're in production
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json<ApiResponse<null>>({
+          success: false,
+          error: 'Question editing is not available in production. Questions are read-only in the deployed version.'
+        }, { status: 400 });
+      } else {
+        return NextResponse.json<ApiResponse<null>>({
+          success: false,
+          error: 'Failed to save questions'
+        }, { status: 500 });
+      }
     }
 
   } catch (error) {
