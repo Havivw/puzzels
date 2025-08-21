@@ -33,6 +33,13 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
     fetchHintRoutes();
   }, []);
 
+  // Fetch rate limit data when rate-limits tab is active
+  useEffect(() => {
+    if (activeTab === 'rate-limits') {
+      fetchUsersWithRateLimits();
+    }
+  }, [activeTab]);
+
   const fetchDashboardData = async () => {
     try {
       const response = await fetch(`/api/dashboard?uuid=${uuid}`);
@@ -68,6 +75,18 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
       console.error('Failed to fetch users:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsersWithRateLimits = async () => {
+    try {
+      const response = await fetch(`/api/admin/rate-limits?uuid=${uuid}`);
+      const data = await response.json();
+      if (data.success) {
+        setUsers(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users with rate limits:', error);
     }
   };
 
@@ -162,29 +181,20 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
     if (!confirm(`Are you sure you want to reset ${type} rate limit for this user?`)) return;
     
     try {
-      if (type === 'answer' || type === 'both') {
-        // Reset answer failures
-        const userIndex = users.findIndex(u => u.uuid === userUuid);
-        if (userIndex !== -1 && users[userIndex].rateLimitData) {
-          users[userIndex].rateLimitData!.consecutiveFailures = 0;
-          delete users[userIndex].rateLimitData!.lockedUntil;
-          // Update the local state
-          setUsers([...users]);
-        }
-      }
+      const response = await fetch(`/api/admin/rate-limits?uuid=${uuid}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userUuid, type })
+      });
       
-      if (type === 'hint-password' || type === 'both') {
-        // Reset hint password failures
-        const userIndex = users.findIndex(u => u.uuid === userUuid);
-        if (userIndex !== -1 && users[userIndex].rateLimitData) {
-          users[userIndex].rateLimitData!.hintPasswordFailures = 0;
-          delete users[userIndex].rateLimitData!.hintPasswordLockedUntil;
-          // Update the local state
-          setUsers([...users]);
-        }
+      const data = await response.json();
+      if (data.success) {
+        // Refresh the users data to get updated rate limit information
+        await fetchUsersWithRateLimits();
+        alert(`Rate limit reset successfully for ${type}!`);
+      } else {
+        alert(`Failed to reset rate limit: ${data.error}`);
       }
-      
-      alert(`Rate limit reset successfully for ${type}!`);
     } catch (error) {
       console.error('Failed to reset rate limit:', error);
       alert('Failed to reset rate limit');
@@ -993,8 +1003,17 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold text-cyan-300 font-mono">RATE LIMIT MONITORING</h3>
-                  <div className="text-sm text-gray-400 font-mono">
-                    🚫 MONITOR AND MANAGE USER RATE LIMITS
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={fetchUsersWithRateLimits}
+                      className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-cyan-500 hover:to-blue-500 flex items-center space-x-2 font-mono shadow-lg shadow-cyan-500/30 border border-cyan-400/30"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      <span>REFRESH DATA</span>
+                    </button>
+                    <div className="text-sm text-gray-400 font-mono">
+                      🚫 MONITOR AND MANAGE USER RATE LIMITS
+                    </div>
                   </div>
                 </div>
 
