@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DataManager } from '@/lib/dataManager';
+import { HybridDataManager } from '@/lib/hybridDataManager';
 import { ApiResponse, AnswerResponse, AnswerRequest } from '@/types';
 
 export async function POST(request: NextRequest) {

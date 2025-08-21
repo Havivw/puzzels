@@ -112,7 +112,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Validate admin access
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
     if (!validation.valid || validation.role !== 'admin') {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
@@ -120,7 +120,7 @@ export async function DELETE(request: NextRequest) {
       }, { status: 403 });
     }
 
-    const success = DataManager.removeUser(userUuid);
+    const success = await HybridDataManager.removeUser(userUuid);
 
     if (success) {
       return NextResponse.json<ApiResponse<{ deleted: boolean }>>({
