@@ -1,4 +1,4 @@
-// Core data types for the Pazzel system
+// Core data types for the Enigma Hub system
 
 export interface Question {
   id: string;

@@ -42,7 +42,7 @@ export default function ComingSoonPage() {
           <div className="mb-8 animate-float">
             <Image
               src="/symbol-positive.svg"
-              alt="Pazzel Symbol"
+              alt="Enigma Hub Symbol"
               width={200}
               height={200}
               className="mx-auto drop-shadow-2xl filter drop-shadow-[0_0_30px_rgba(0,255,255,0.3)]"
@@ -52,7 +52,7 @@ export default function ComingSoonPage() {
 
           {/* Main heading */}
           <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 mb-6 font-mono tracking-wider animate-pulse">
-            PAZZEL
+            ENIGMA HUB
           </h1>
 
           {/* Subtitle */}
@@ -118,7 +118,7 @@ export default function ComingSoonPage() {
           {/* Footer */}
           <div className="mt-16 pt-8 border-t border-gray-800">
             <p className="text-gray-500 text-sm font-mono">
-              © 2024 Pazzel Challenge Platform. All rights reserved.
+              © 2025 Enigma Hub Challenge Platform. All rights reserved.
             </p>
           </div>
         </div>
