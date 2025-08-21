@@ -1,103 +1,140 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState, useEffect } from 'react';
+
+export default function ComingSoonPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-black bg-gradient-to-br from-gray-900 via-black to-blue-900 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }}></div>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 opacity-10" style={{
+        backgroundImage: `
+          linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px)
+        `,
+        backgroundSize: '50px 50px'
+      }}></div>
+
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-8">
+        <div className="text-center max-w-4xl mx-auto">
+          {/* Logo/Symbol */}
+          <div className="mb-8 animate-float">
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+              src="/symbol-positive.svg"
+              alt="Pazzel Symbol"
+              width={200}
+              height={200}
+              className="mx-auto drop-shadow-2xl filter drop-shadow-[0_0_30px_rgba(0,255,255,0.3)]"
+              priority
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </div>
+
+          {/* Main heading */}
+          <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 mb-6 font-mono tracking-wider animate-pulse">
+            PAZZEL
+          </h1>
+
+          {/* Subtitle */}
+          <div className="mb-8">
+            <h2 className="text-2xl md:text-3xl text-cyan-300 mb-4 font-mono tracking-wide">
+              COMING SOON
+            </h2>
+            <div className="w-32 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 mx-auto rounded-full shadow-lg shadow-cyan-500/50"></div>
+          </div>
+
+          {/* Description */}
+          <p className="text-lg md:text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed font-mono">
+            Prepare your mind for the ultimate puzzle challenge. 
+            <br />
+            <span className="text-cyan-400">Interactive riddles</span> await those brave enough to enter.
+          </p>
+
+          {/* Features grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-3xl mx-auto">
+            <div className="bg-gray-900/50 border border-cyan-500/30 rounded-lg p-6 backdrop-blur-sm shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 transition-all duration-300">
+              <div className="text-cyan-400 text-3xl mb-3">🧩</div>
+              <h3 className="text-cyan-300 font-semibold mb-2 font-mono">MIND BENDING</h3>
+              <p className="text-gray-400 text-sm font-mono">Complex puzzles that challenge your thinking</p>
+            </div>
+            
+            <div className="bg-gray-900/50 border border-blue-500/30 rounded-lg p-6 backdrop-blur-sm shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-300">
+              <div className="text-blue-400 text-3xl mb-3">⚡</div>
+              <h3 className="text-blue-300 font-semibold mb-2 font-mono">REAL-TIME</h3>
+              <p className="text-gray-400 text-sm font-mono">Instant feedback and progression tracking</p>
+            </div>
+            
+            <div className="bg-gray-900/50 border border-purple-500/30 rounded-lg p-6 backdrop-blur-sm shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20 transition-all duration-300">
+              <div className="text-purple-400 text-3xl mb-3">🔐</div>
+              <h3 className="text-purple-300 font-semibold mb-2 font-mono">SECURE</h3>
+              <p className="text-gray-400 text-sm font-mono">Protected access with advanced encryption</p>
+            </div>
+          </div>
+
+          {/* Launch notification */}
+          <div className="bg-gradient-to-r from-cyan-900/30 to-blue-900/30 border border-cyan-500/50 rounded-lg p-6 mb-8 backdrop-blur-sm shadow-lg shadow-cyan-500/20">
+            <h3 className="text-cyan-300 font-semibold mb-2 font-mono">🚀 LAUNCHING SOON</h3>
+            <p className="text-gray-300 font-mono">
+              The system is currently in final calibration phase. 
+              <br />
+              <span className="text-cyan-400">Authorized personnel</span> can access the beta using their UUID credentials.
+            </p>
+          </div>
+
+          {/* Access button for authorized users */}
+          <div className="space-y-4">
+            <Link 
+              href="/puzzle"
+              className="inline-block bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-8 py-4 rounded-lg hover:from-cyan-500 hover:to-blue-500 transition-all duration-300 font-mono font-semibold shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transform hover:scale-105"
+            >
+              🔑 AUTHORIZED ACCESS
+            </Link>
+            
+            <p className="text-xs text-gray-500 font-mono">
+              Access requires valid UUID credentials
+            </p>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-16 pt-8 border-t border-gray-800">
+            <p className="text-gray-500 text-sm font-mono">
+              © 2024 Pazzel Challenge Platform. All rights reserved.
+            </p>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+
+      {/* Custom CSS for animations */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }
