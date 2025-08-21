@@ -1,140 +1,99 @@
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import PuzzleInterface from '@/components/PuzzleInterface';
+import AdminDashboard from '@/components/AdminDashboard';
+import ReadOnlyDashboard from '@/components/ReadOnlyDashboard';
+import ComingSoonPage from '@/components/ComingSoonPage';
+import { ValidationResult } from '@/types';
 
-export default function ComingSoonPage() {
-  const [mounted, setMounted] = useState(false);
+export default function Home() {
+  const searchParams = useSearchParams();
+  const uuid = searchParams?.get('uuid');
+  const [validation, setValidation] = useState<ValidationResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (!uuid) {
+      // No UUID provided, show coming soon page
+      setLoading(false);
+      return;
+    }
 
-  if (!mounted) {
+    validateUser(uuid);
+  }, [uuid]);
+
+  const validateUser = async (userUuid: string) => {
+    try {
+      const response = await fetch(`/api/validate?uuid=${userUuid}`);
+      const data = await response.json();
+
+      if (data.success && data.data.valid) {
+        setValidation(data.data);
+      } else {
+        setError('Invalid UUID. Access denied.');
+      }
+    } catch (err) {
+      setError('Failed to validate user. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // If no UUID provided, show coming soon page
+  if (!uuid) {
+    return <ComingSoonPage />;
+  }
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
+      <div className="min-h-screen bg-black bg-gradient-to-br from-gray-900 via-black to-blue-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4 shadow-lg shadow-cyan-500/50"></div>
+          <p className="text-cyan-300 font-mono">VALIDATING ACCESS...</p>
+          <div className="mt-2 text-xs text-gray-500 font-mono">Scanning pathways...</div>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-black bg-gradient-to-br from-gray-900 via-black to-blue-900 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }}></div>
-      </div>
-
-      {/* Grid pattern overlay */}
-      <div className="absolute inset-0 opacity-10" style={{
-        backgroundImage: `
-          linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px)
-        `,
-        backgroundSize: '50px 50px'
-      }}></div>
-
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-8">
-        <div className="text-center max-w-4xl mx-auto">
-          {/* Logo/Symbol */}
-          <div className="mb-8 animate-float">
-            <Image
-              src="/symbol-positive.svg"
-              alt="Pazzel Symbol"
-              width={200}
-              height={200}
-              className="mx-auto drop-shadow-2xl filter drop-shadow-[0_0_30px_rgba(0,255,255,0.3)]"
-              priority
-            />
-          </div>
-
-          {/* Main heading */}
-          <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 mb-6 font-mono tracking-wider animate-pulse">
-            PAZZEL
-          </h1>
-
-          {/* Subtitle */}
-          <div className="mb-8">
-            <h2 className="text-2xl md:text-3xl text-cyan-300 mb-4 font-mono tracking-wide">
-              COMING SOON
-            </h2>
-            <div className="w-32 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 mx-auto rounded-full shadow-lg shadow-cyan-500/50"></div>
-          </div>
-
-          {/* Description */}
-          <p className="text-lg md:text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed font-mono">
-            Prepare your mind for the ultimate puzzle challenge. 
-            <br />
-            <span className="text-cyan-400">Interactive riddles</span> await those brave enough to enter.
-          </p>
-
-          {/* Features grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-3xl mx-auto">
-            <div className="bg-gray-900/50 border border-cyan-500/30 rounded-lg p-6 backdrop-blur-sm shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 transition-all duration-300">
-              <div className="text-cyan-400 text-3xl mb-3">🧩</div>
-              <h3 className="text-cyan-300 font-semibold mb-2 font-mono">MIND BENDING</h3>
-              <p className="text-gray-400 text-sm font-mono">Complex puzzles that challenge your thinking</p>
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black bg-gradient-to-br from-gray-900 via-black to-red-900 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="text-red-400 text-6xl mb-4 animate-pulse">⚠</div>
+          <h1 className="text-2xl font-bold text-red-300 mb-4 font-mono tracking-wider">ACCESS DENIED</h1>
+          <p className="text-gray-400 mb-6 font-mono">{error}</p>
+          <div className="bg-gray-900 border border-red-500/30 p-4 rounded-lg text-sm text-gray-300 shadow-lg shadow-red-500/20">
+            <p className="font-semibold mb-2 text-red-400 font-mono">AUTHORIZATION REQUIRED</p>
+            <p className="font-mono">Contact system administrator for access.</p>
+            <div className="mt-4 p-2 bg-gray-800 rounded text-xs font-mono">
+              <p className="text-gray-400">Valid UUID format required:</p>
+              <p className="text-cyan-400">?uuid=your-valid-uuid</p>
             </div>
-            
-            <div className="bg-gray-900/50 border border-blue-500/30 rounded-lg p-6 backdrop-blur-sm shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-300">
-              <div className="text-blue-400 text-3xl mb-3">⚡</div>
-              <h3 className="text-blue-300 font-semibold mb-2 font-mono">REAL-TIME</h3>
-              <p className="text-gray-400 text-sm font-mono">Instant feedback and progression tracking</p>
-            </div>
-            
-            <div className="bg-gray-900/50 border border-purple-500/30 rounded-lg p-6 backdrop-blur-sm shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20 transition-all duration-300">
-              <div className="text-purple-400 text-3xl mb-3">🔐</div>
-              <h3 className="text-purple-300 font-semibold mb-2 font-mono">SECURE</h3>
-              <p className="text-gray-400 text-sm font-mono">Protected access with advanced encryption</p>
-            </div>
-          </div>
-
-          {/* Launch notification */}
-          <div className="bg-gradient-to-r from-cyan-900/30 to-blue-900/30 border border-cyan-500/50 rounded-lg p-6 mb-8 backdrop-blur-sm shadow-lg shadow-cyan-500/20">
-            <h3 className="text-cyan-300 font-semibold mb-2 font-mono">🚀 LAUNCHING SOON</h3>
-            <p className="text-gray-300 font-mono">
-              The system is currently in final calibration phase. 
-              <br />
-              <span className="text-cyan-400">Authorized personnel</span> can access the beta using their UUID credentials.
-            </p>
-          </div>
-
-          {/* Access button for authorized users */}
-          <div className="space-y-4">
-            <Link 
-              href="/puzzle"
-              className="inline-block bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-8 py-4 rounded-lg hover:from-cyan-500 hover:to-blue-500 transition-all duration-300 font-mono font-semibold shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transform hover:scale-105"
-            >
-              🔑 AUTHORIZED ACCESS
-            </Link>
-            
-            <p className="text-xs text-gray-500 font-mono">
-              Access requires valid UUID credentials
-            </p>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-16 pt-8 border-t border-gray-800">
-            <p className="text-gray-500 text-sm font-mono">
-              © 2024 Pazzel Challenge Platform. All rights reserved.
-            </p>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Custom CSS for animations */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-      `}</style>
-    </div>
-  );
+  if (!validation) return null;
+
+  // Render appropriate interface based on user role
+  switch (validation.role) {
+    case 'user':
+      return <PuzzleInterface uuid={uuid!} user={validation.user!} />;
+    case 'admin':
+      return <AdminDashboard uuid={uuid!} />;
+    case 'dashboard':
+      return <ReadOnlyDashboard uuid={uuid!} />;
+    default:
+      return (
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <p className="text-gray-400 font-mono">UNKNOWN USER ROLE - SYSTEM ERROR</p>
+        </div>
+      );
+  }
 }
