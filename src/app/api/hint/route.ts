@@ -63,8 +63,21 @@ export async function POST(request: NextRequest) {
 
     // Check if hints require password
     if (hintPassword && hintPassword.trim() !== '') {
-      if (!password || password !== hintPassword) {
-        // Update hint password failure count
+      if (!password) {
+        // No password provided - just request password, don't count as failure
+        const response: HintResponse = {
+          success: false,
+          requiresPassword: true,
+          rateLimited: false,
+          error: 'Password required to access hints'
+        };
+        
+        return NextResponse.json<ApiResponse<HintResponse>>({
+          success: true,
+          data: response
+        });
+      } else if (password !== hintPassword) {
+        // Password provided but incorrect - count as failure
         const rateLimitResult = await HybridDataManager.updateHintPasswordFailure(uuid);
         
         const response: HintResponse = {
@@ -74,7 +87,7 @@ export async function POST(request: NextRequest) {
           lockTimeRemaining: rateLimitResult.lockTimeRemaining,
           error: rateLimitResult.rateLimited 
             ? 'Too many failed password attempts. Account locked temporarily.'
-            : 'Incorrect password or password required'
+            : 'Incorrect password'
         };
         
         return NextResponse.json<ApiResponse<HintResponse>>({
@@ -82,7 +95,7 @@ export async function POST(request: NextRequest) {
           data: response
         });
       } else {
-        // Reset hint password failures on successful password
+        // Correct password - reset failures and show hints
         await HybridDataManager.resetHintPasswordFailures(uuid);
       }
     }
