@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { Question, User, AdminConfig, ValidationResult } from '@/types';
-import { ProductionDatabase } from './productionDatabase';
 
 const DATA_DIR = path.join(process.cwd(), 'src/data');
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DataManager } from '@/lib/dataManager';
+import { HybridDataManager } from '@/lib/hybridDataManager';
 import { ApiResponse, QuestionResponse } from '@/types';
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate user
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
     if (!validation.valid || validation.role !== 'user' || !validation.user) {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     const user = validation.user;
-    const questions = DataManager.getQuestions();
+    const questions = await HybridDataManager.getQuestions();
     
     // Find current question
     const currentQuestion = questions.find(q => q.order === user.currentQuestion);

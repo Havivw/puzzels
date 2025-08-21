@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate user
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
     if (!validation.valid || validation.role !== 'user' || !validation.user) {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const user = validation.user;
     
     // Check rate limit before processing answer
-    const rateLimitCheck = DataManager.checkRateLimit(uuid);
+    const rateLimitCheck = await HybridDataManager.checkRateLimit(uuid);
     if (rateLimitCheck.rateLimited) {
       const response: AnswerResponse = {
         correct: false,
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         }
       };
       
-      const questions = DataManager.getQuestions();
+      const questions = await HybridDataManager.getQuestions();
       response.progress.total = questions.length;
       response.progress.percentage = Math.round((user.completedQuestions.length / questions.length) * 100);
       
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    const questions = DataManager.getQuestions();
+    const questions = await HybridDataManager.getQuestions();
     
     // Find the question
     const question = questions.find(q => q.id === questionId);
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     if (isCorrect) {
       // Update user progress
-      const updateSuccess = DataManager.updateUserProgress(uuid, questionId);
+      const updateSuccess = await HybridDataManager.updateUserProgress(uuid, questionId);
       
       if (!updateSuccess) {
         return NextResponse.json<ApiResponse<null>>({
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       };
     } else {
       // Handle incorrect answer and update failure count
-      const rateLimitResult = DataManager.updateUserFailure(uuid);
+      const rateLimitResult = await HybridDataManager.updateUserFailure(uuid);
       
       response = {
         correct: false,

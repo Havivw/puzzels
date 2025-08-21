@@ -99,6 +99,6 @@ export type UserRole = 'user' | 'admin' | 'dashboard';
 
 export interface ValidationResult {
   valid: boolean;
-  role: UserRole;
+  role: UserRole | null;
   user?: User;
 }

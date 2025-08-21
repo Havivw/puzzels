@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DataManager } from '@/lib/dataManager';
+import { HybridDataManager } from '@/lib/hybridDataManager';
 import { ApiResponse, DashboardData, AdminDashboardData, UserProgress } from '@/types';
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate user
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
     if (!validation.valid || (validation.role !== 'admin' && validation.role !== 'dashboard')) {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
       }, { status: 403 });
     }
 
-    const users = DataManager.getUsers();
-    const questions = DataManager.getQuestions();
+    const users = await HybridDataManager.getUsers();
+    const questions = await HybridDataManager.getQuestions();
     const totalQuestions = questions.length;
 
     // Calculate user progress

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DataManager } from '@/lib/dataManager';
+import { HybridDataManager } from '@/lib/hybridDataManager';
 import { ApiResponse, HintResponse, HintRequest } from '@/types';
 
 export async function POST(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate user
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
     if (!validation.valid || validation.role !== 'user' || !validation.user) {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
-    const questions = DataManager.getQuestions();
+    const questions = await HybridDataManager.getQuestions();
     
     // Find the question
     const question = questions.find(q => q.id === questionId);

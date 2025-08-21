@@ -64,16 +64,25 @@ export class DatabaseManager {
   }
 
   // Config operations
-  static async getConfig(): Promise<AdminConfig | null> {
+  static async getConfig(): Promise<AdminConfig> {
     try {
       if (process.env.NODE_ENV === 'production') {
         const config = await kv.get<AdminConfig>(KEYS.CONFIG);
-        return config;
+        return config || {
+          adminUuid: 'admin-b290-6877-42c1-afe1-0e40f0098df6',
+          dashboardUuid: 'dash-52dc-2330-49f1-89e9-00fb6440cd5b'
+        };
       }
-      return null;
+      return {
+        adminUuid: 'admin-b290-6877-42c1-afe1-0e40f0098df6',
+        dashboardUuid: 'dash-52dc-2330-49f1-89e9-00fb6440cd5b'
+      };
     } catch (error) {
       console.error('Error getting config from database:', error);
-      return null;
+      return {
+        adminUuid: 'admin-b290-6877-42c1-afe1-0e40f0098df6',
+        dashboardUuid: 'dash-52dc-2330-49f1-89e9-00fb6440cd5b'
+      };
     }
   }
 
@@ -100,7 +109,10 @@ export class DatabaseManager {
           name,
           currentQuestion: 1,
           completedQuestions: [],
-          rateLimitData: {},
+          rateLimitData: {
+            consecutiveFailures: 0,
+            totalFailures: 0
+          },
           createdAt: new Date().toISOString(),
           lastActivity: new Date().toISOString()
         };

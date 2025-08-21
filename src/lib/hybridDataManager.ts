@@ -301,7 +301,17 @@ export class HybridDataManager {
   }
 
   // Dashboard data
-  static async getDashboardData(): Promise<any> {
+  static async getDashboardData(): Promise<{
+    totalUsers: number;
+    averageProgress: number;
+    totalCompletions: number;
+    users: Array<{
+      name: string;
+      completedCount: number;
+      totalQuestions: number;
+      lastActivity: string;
+    }>;
+  }> {
     try {
       const users = await this.getUsers();
       const questions = await this.getQuestions();

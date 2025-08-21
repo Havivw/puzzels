@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { HybridDataManager } from '@/lib/hybridDataManager';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Initialize production database if needed
     await HybridDataManager.initializeProduction();
