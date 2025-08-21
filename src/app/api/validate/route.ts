@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HybridDataManager } from '@/lib/hybridDataManager';
-import { ApiResponse, ValidationResult } from '@/types';
+import { ApiResponse, SafeValidationResult } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,9 +16,16 @@ export async function GET(request: NextRequest) {
 
     const validation = await HybridDataManager.validateUser(uuid);
 
-    return NextResponse.json<ApiResponse<ValidationResult>>({
+    // Filter out sensitive user data
+    const safeValidation: SafeValidationResult = {
+      valid: validation.valid,
+      role: validation.role
+      // Deliberately exclude: user object
+    };
+
+    return NextResponse.json<ApiResponse<SafeValidationResult>>({
       success: true,
-      data: validation
+      data: safeValidation
     });
 
   } catch (error) {

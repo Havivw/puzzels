@@ -6,12 +6,12 @@ import PuzzleInterface from '@/components/PuzzleInterface';
 import AdminDashboard from '@/components/AdminDashboard';
 import ReadOnlyDashboard from '@/components/ReadOnlyDashboard';
 import ComingSoonPage from '@/components/ComingSoonPage';
-import { ValidationResult } from '@/types';
+import { SafeValidationResult } from '@/types';
 
 export default function Home() {
   const searchParams = useSearchParams();
   const uuid = searchParams?.get('uuid');
-  const [validation, setValidation] = useState<ValidationResult | null>(null);
+  const [validation, setValidation] = useState<SafeValidationResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,7 +84,7 @@ export default function Home() {
   // Render appropriate interface based on user role
   switch (validation.role) {
     case 'user':
-      return <PuzzleInterface uuid={uuid!} user={validation.user!} />;
+      return <PuzzleInterface uuid={uuid!} />;
     case 'admin':
       return <AdminDashboard uuid={uuid!} />;
     case 'dashboard':

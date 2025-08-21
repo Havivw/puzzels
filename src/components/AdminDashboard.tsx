@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AdminDashboardData, Question, User } from '@/types';
+import { sanitizeHtml, sanitizeErrorMessage } from '@/lib/security';
 import { Settings, Users, FileText, Plus, Trash2, Edit, Save, X, Copy, ExternalLink, Shield, RefreshCw, Link } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -460,16 +461,16 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <h4 className="font-semibold text-cyan-300 mb-2 font-mono">PUZZLE #{question.order}</h4>
-                            <p className="text-gray-300 mb-2 font-mono">&gt; {question.text}</p>
-                            <p className="text-sm text-green-400 font-mono">SOLUTION: {question.answer}</p>
+                            <p className="text-gray-300 mb-2 font-mono">&gt; {sanitizeHtml(question.text)}</p>
+                            <p className="text-sm text-green-400 font-mono">SOLUTION: {sanitizeHtml(question.answer)}</p>
                             {question.hints && question.hints.length > 0 && (
                               <p className="text-sm text-yellow-400 mt-1 font-mono">
-                                HINTS: {question.hints.join(' | ')}
+                                HINTS: {question.hints.map(hint => sanitizeHtml(hint)).join(' | ')}
                               </p>
                             )}
                             {question.hintPassword && (
                               <p className="text-sm text-orange-400 mt-1 font-mono">
-                                🔒 ENCRYPTION KEY: {question.hintPassword}
+                                🔒 ENCRYPTION KEY: {sanitizeHtml(question.hintPassword)}
                               </p>
                             )}
                           </div>

@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
 
     const config = await HybridDataManager.getConfig();
 
+    // NOTE: Admin endpoint intentionally returns UUIDs for management functionality
+    // This is secure because it requires admin authentication
     return NextResponse.json<ApiResponse<AdminConfig>>({
       success: true,
       data: config

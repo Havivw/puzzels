@@ -16,6 +16,30 @@ export interface SafeQuestion {
   order: number;
 }
 
+// Safe user type that excludes sensitive data for client responses
+export interface SafeUser {
+  uuid: string;
+  name: string;
+  currentQuestion: number;
+  completedQuestions: string[];
+  createdAt: string;
+  lastActivity: string;
+  // Deliberately excludes: rateLimitData
+}
+
+// Safe validation result that excludes user data
+export interface SafeValidationResult {
+  valid: boolean;
+  role: UserRole | null;
+  // Deliberately excludes: user object
+}
+
+// Safe config for admin responses (excludes actual UUIDs)
+export interface SafeAdminConfig {
+  configExists: boolean;
+  // Deliberately excludes: adminUuid, dashboardUuid
+}
+
 export interface User {
   uuid: string;
   name: string;
@@ -50,8 +74,9 @@ export interface ApiResponse<T> {
 }
 
 export interface QuestionResponse {
-  question: SafeQuestion;
+  question: SafeQuestion | null;
   isLastQuestion: boolean;
+  completed?: boolean;
   progress: {
     current: number;
     total: number;

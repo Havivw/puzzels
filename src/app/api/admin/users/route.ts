@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HybridDataManager } from '@/lib/hybridDataManager';
-import { ApiResponse, User } from '@/types';
+import { ApiResponse, User, SafeUser } from '@/types';
+import { validateUserName, validateUuid } from '@/lib/security';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(request: NextRequest) {
@@ -8,10 +9,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const uuid = searchParams.get('uuid');
 
-    if (!uuid) {
+    if (!uuid || !validateUuid(uuid)) {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
-        error: 'UUID parameter is required'
+        error: 'Valid UUID parameter is required'
       }, { status: 400 });
     }
 
@@ -26,9 +27,20 @@ export async function GET(request: NextRequest) {
 
     const users = await HybridDataManager.getUsers();
 
-    return NextResponse.json<ApiResponse<User[]>>({
+    // Filter out sensitive data from users
+    const safeUsers: SafeUser[] = users.map(user => ({
+      uuid: user.uuid,
+      name: user.name,
+      currentQuestion: user.currentQuestion,
+      completedQuestions: user.completedQuestions,
+      createdAt: user.createdAt,
+      lastActivity: user.lastActivity
+      // Deliberately exclude: rateLimitData
+    }));
+
+    return NextResponse.json<ApiResponse<SafeUser[]>>({
       success: true,
-      data: users
+      data: safeUsers
     });
 
   } catch (error) {
@@ -54,10 +66,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    if (!name) {
+    // Validate and sanitize user name
+    const nameValidation = validateUserName(name);
+    if (!nameValidation.valid) {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
-        error: 'User name is required'
+        error: nameValidation.error || 'Invalid user name'
       }, { status: 400 });
     }
 
@@ -72,15 +86,26 @@ export async function POST(request: NextRequest) {
 
     // Generate new user UUID
     const newUserUuid = `user-${uuidv4()}`;
-    const success = await HybridDataManager.addUser(name, newUserUuid);
+    const success = await HybridDataManager.addUser(nameValidation.sanitized, newUserUuid);
 
     if (success) {
       const users = await HybridDataManager.getUsers();
       const newUser = users.find(u => u.uuid === newUserUuid);
       
-      return NextResponse.json<ApiResponse<User>>({
+      // Filter sensitive data from new user
+      const safeNewUser: SafeUser = {
+        uuid: newUser!.uuid,
+        name: newUser!.name,
+        currentQuestion: newUser!.currentQuestion,
+        completedQuestions: newUser!.completedQuestions,
+        createdAt: newUser!.createdAt,
+        lastActivity: newUser!.lastActivity
+        // Deliberately exclude: rateLimitData
+      };
+
+      return NextResponse.json<ApiResponse<SafeUser>>({
         success: true,
-        data: newUser!
+        data: safeNewUser
       });
     } else {
       return NextResponse.json<ApiResponse<null>>({

@@ -26,6 +26,23 @@ export async function GET(request: NextRequest) {
     const user = validation.user;
     const questions = await HybridDataManager.getQuestions();
     
+    // Check if user has completed all questions
+    if (user.completedQuestions.length >= questions.length) {
+      return NextResponse.json<ApiResponse<QuestionResponse>>({
+        success: true,
+        data: {
+          question: null, // No current question
+          isLastQuestion: true,
+          completed: true,
+          progress: {
+            current: questions.length,
+            total: questions.length,
+            percentage: 100
+          }
+        }
+      });
+    }
+    
     // Find current question
     const currentQuestion = questions.find(q => q.order === user.currentQuestion);
     
