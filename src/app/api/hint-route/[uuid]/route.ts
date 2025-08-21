@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HybridDataManager } from '@/lib/hybridDataManager';
-import { ApiResponse, HintRoute } from '@/types';
+import { ApiResponse, HintRoute, SafeHintRoute } from '@/types';
 
 export async function GET(
   request: NextRequest,
@@ -25,7 +25,7 @@ export async function GET(
     }
 
     const routes = await HybridDataManager.getHintRoutes();
-    const hintRoute = routes.find(r => r.uuid === uuid && r.isActive);
+    const hintRoute: HintRoute | undefined = routes.find(r => r.uuid === uuid && r.isActive);
     
     if (!hintRoute) {
       return NextResponse.json<ApiResponse<null>>({
@@ -42,9 +42,15 @@ export async function GET(
       }, { status: 410 });
     }
 
-    return NextResponse.json<ApiResponse<HintRoute>>({
+    // Filter out sensitive data before sending to client
+    const safeHintRoute: SafeHintRoute = {
+      content: hintRoute.content
+      // Deliberately excludes: uuid, createdAt, expiresAt, isActive
+    };
+
+    return NextResponse.json<ApiResponse<SafeHintRoute>>({
       success: true,
-      data: hintRoute
+      data: safeHintRoute
     });
 
   } catch (error) {

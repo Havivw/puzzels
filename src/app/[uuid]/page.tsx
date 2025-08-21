@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { HintRoute } from '@/types';
+import { SafeHintRoute } from '@/types';
+import { sanitizeHtml } from '@/lib/security';
 
 export default function HintRoutePage({ params }: { params: Promise<{ uuid: string }> }) {
   const [uuid, setUuid] = useState<string>('');
-  const [hintRoute, setHintRoute] = useState<HintRoute | null>(null);
+  const [hintRoute, setHintRoute] = useState<SafeHintRoute | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,18 +93,15 @@ export default function HintRoutePage({ params }: { params: Promise<{ uuid: stri
         <div className="bg-gray-900 border border-green-400 rounded-lg p-8 shadow-2xl">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-green-400 mb-2">🔓 HINT ACCESSED</h1>
-            <p className="text-gray-400">Route: {hintRoute.uuid}</p>
-            <p className="text-gray-400">Created: {new Date(hintRoute.createdAt).toLocaleString()}</p>
-            {hintRoute.expiresAt && (
-              <p className="text-gray-400">Expires: {new Date(hintRoute.expiresAt).toLocaleString()}</p>
-            )}
+            <p className="text-gray-400">Secure hint delivery system</p>
           </div>
           
           <div className="bg-black border border-green-400 rounded-lg p-6">
             <h2 className="text-xl font-semibold text-green-400 mb-4">HINT CONTENT:</h2>
-            <div className="text-lg leading-relaxed whitespace-pre-wrap">
-              {hintRoute.content}
-            </div>
+            <div 
+              className="text-lg leading-relaxed whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(hintRoute.content) }}
+            />
           </div>
           
           <div className="mt-8 text-center">

@@ -135,6 +135,12 @@ export interface HintRoute {
   isActive: boolean;
 }
 
+// Safe hint route type that excludes sensitive data for public access
+export interface SafeHintRoute {
+  content: string;
+  // Deliberately excludes: uuid, createdAt, expiresAt, isActive
+}
+
 export interface AdminDashboardData extends DashboardData {
   users: (UserProgress & { uuid: string })[];
 }
