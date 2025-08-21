@@ -1,11 +1,11 @@
 import { kv } from '@vercel/kv';
 import { Question, User, AdminConfig } from '@/types';
 
-// Database keys
+// Database keys for 'puzzel' Redis database
 const KEYS = {
-  QUESTIONS: 'pazzel:questions',
-  USERS: 'pazzel:users',
-  CONFIG: 'pazzel:config'
+  QUESTIONS: 'puzzel:questions',
+  USERS: 'puzzel:users',
+  CONFIG: 'puzzel:config'
 };
 
 export class DatabaseManager {
@@ -87,6 +87,140 @@ export class DatabaseManager {
     } catch (error) {
       console.error('Error saving config to database:', error);
       return false;
+    }
+  }
+
+  // User management operations
+  static async addUser(name: string, uuid: string): Promise<boolean> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const users = await this.getUsers();
+        const newUser = {
+          uuid,
+          name,
+          currentQuestion: 1,
+          completedQuestions: [],
+          rateLimitData: {},
+          createdAt: new Date().toISOString(),
+          lastActivity: new Date().toISOString()
+        };
+        users.push(newUser);
+        return await this.saveUsers(users);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error adding user:', error);
+      return false;
+    }
+  }
+
+  static async removeUser(uuid: string): Promise<boolean> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const users = await this.getUsers();
+        const filteredUsers = users.filter(u => u.uuid !== uuid);
+        if (filteredUsers.length === users.length) {
+          return false; // User not found
+        }
+        return await this.saveUsers(filteredUsers);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error removing user:', error);
+      return false;
+    }
+  }
+
+  static async updateUserProgress(uuid: string, questionId: string): Promise<boolean> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const users = await this.getUsers();
+        const userIndex = users.findIndex(u => u.uuid === uuid);
+        if (userIndex === -1) return false;
+
+        const user = users[userIndex];
+        if (!user.completedQuestions.includes(questionId)) {
+          user.completedQuestions.push(questionId);
+          user.currentQuestion += 1;
+        }
+        
+        // Reset rate limiting on correct answer
+        if (user.rateLimitData) {
+          user.rateLimitData.consecutiveFailures = 0;
+          delete user.rateLimitData.lockedUntil;
+        }
+        
+        user.lastActivity = new Date().toISOString();
+        users[userIndex] = user;
+        
+        return await this.saveUsers(users);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating user progress:', error);
+      return false;
+    }
+  }
+
+  static async updateUserFailure(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining?: number }> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const users = await this.getUsers();
+        const userIndex = users.findIndex(u => u.uuid === uuid);
+        if (userIndex === -1) return { rateLimited: false };
+
+        const user = users[userIndex];
+        if (!user.rateLimitData) {
+          user.rateLimitData = { consecutiveFailures: 0, totalFailures: 0 };
+        }
+
+        user.rateLimitData.consecutiveFailures += 1;
+        user.rateLimitData.totalFailures += 1;
+        user.lastActivity = new Date().toISOString();
+
+        if (user.rateLimitData.consecutiveFailures >= 3) {
+          const lockUntil = new Date();
+          lockUntil.setMinutes(lockUntil.getMinutes() + 10);
+          user.rateLimitData.lockedUntil = lockUntil.toISOString();
+          users[userIndex] = user;
+          await this.saveUsers(users);
+          return { rateLimited: true, lockTimeRemaining: 600 };
+        }
+
+        users[userIndex] = user;
+        await this.saveUsers(users);
+        return { rateLimited: false };
+      }
+      return { rateLimited: false };
+    } catch (error) {
+      console.error('Error updating user failure:', error);
+      return { rateLimited: false };
+    }
+  }
+
+  static async checkRateLimit(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining: number }> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const users = await this.getUsers();
+        const user = users.find(u => u.uuid === uuid);
+        if (!user || !user.rateLimitData || !user.rateLimitData.lockedUntil) {
+          return { rateLimited: false, lockTimeRemaining: 0 };
+        }
+
+        const lockUntil = new Date(user.rateLimitData.lockedUntil);
+        const now = new Date();
+
+        if (now < lockUntil) {
+          const lockTimeRemaining = Math.ceil((lockUntil.getTime() - now.getTime()) / 1000);
+          return { rateLimited: true, lockTimeRemaining };
+        }
+
+        return { rateLimited: false, lockTimeRemaining: 0 };
+      }
+      return { rateLimited: false, lockTimeRemaining: 0 };
+    } catch (error) {
+      console.error('Error checking rate limit:', error);
+      return { rateLimited: false, lockTimeRemaining: 0 };
     }
   }
 

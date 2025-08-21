@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Question, User, AdminConfig, ValidationResult } from '@/types';
-import { DatabaseManager } from './database';
+import { ProductionDatabase } from './productionDatabase';
 
 const DATA_DIR = path.join(process.cwd(), 'src/data');
 
@@ -11,8 +11,14 @@ export class DataManager {
   private static configPath = path.join(DATA_DIR, 'config.json');
 
   // Read operations
-  static getQuestions(): Question[] {
+  static async getQuestions(): Promise<Question[]> {
     try {
+      // In production, use database
+      if (process.env.NODE_ENV === 'production') {
+        return await ProductionDatabase.getQuestions();
+      }
+
+      // In development, use JSON file
       const data = fs.readFileSync(this.questionsPath, 'utf8');
       return JSON.parse(data);
     } catch (error) {

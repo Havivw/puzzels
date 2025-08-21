@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DataManager } from '@/lib/dataManager';
+import { HybridDataManager } from '@/lib/hybridDataManager';
 import { ApiResponse, ValidationResult } from '@/types';
 
 export async function GET(request: NextRequest) {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
 
     return NextResponse.json<ApiResponse<ValidationResult>>({
       success: true,

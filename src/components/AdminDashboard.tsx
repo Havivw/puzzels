@@ -89,11 +89,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
       if (data.success) {
         alert('Questions saved successfully!');
       } else {
-        if (data.error && data.error.includes('production')) {
-          alert('🚫 Question Editing Not Available\n\nQuestion editing is disabled in the production environment.\n\nThe current questions are read-only.\n\nFor changes, contact your system administrator.');
-        } else {
-          alert(`Failed to save questions: ${data.error}`);
-        }
+        alert(`Failed to save questions: ${data.error}`);
       }
     } catch (error) {
       console.error('Failed to save questions:', error);
@@ -145,11 +141,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
         fetchDashboardData(); // Refresh dashboard data
         alert(`User "${data.data.name}" added successfully!\nUUID: ${data.data.uuid}\n\nShare this URL: ${window.location.origin}?uuid=${data.data.uuid}`);
       } else {
-        if (data.error && data.error.includes('production')) {
-          alert('🚫 User Management Not Available\n\nUser creation is disabled in the production environment.\n\nUsers are read-only in the deployed version.\n\nFor user management, contact your system administrator.');
-        } else {
-          alert(`Failed to add user: ${data.error}`);
-        }
+        alert(`Failed to add user: ${data.error}`);
       }
     } catch (error) {
       console.error('Failed to add user:', error);
@@ -238,11 +230,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
         // Redirect to new admin URL
         window.location.href = `${window.location.origin}?uuid=${newAdminUuid}`;
       } else {
-        if (data.error.includes('production environment')) {
-          alert(`🚫 UUID Update Not Available in Production\n\nUUID changes are managed through environment variables in production.\n\nContact your system administrator to update:\n• ADMIN_UUID\n• DASHBOARD_UUID\n\nCurrent functionality remains available with existing UUIDs.`);
-        } else {
-          alert(`Failed to update UUIDs: ${data.error}`);
-        }
+        alert(`Failed to update UUIDs: ${data.error}`);
       }
     } catch (error) {
       alert('Failed to update UUIDs');

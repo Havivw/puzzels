@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DataManager } from '@/lib/dataManager';
+import { HybridDataManager } from '@/lib/hybridDataManager';
 import { ApiResponse, Question } from '@/types';
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate admin access
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
     if (!validation.valid || validation.role !== 'admin') {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       }, { status: 403 });
     }
 
-    const questions = DataManager.getQuestions();
+    const questions = await HybridDataManager.getQuestions();
 
     return NextResponse.json<ApiResponse<Question[]>>({
       success: true,
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate admin access
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
     if (!validation.valid || validation.role !== 'admin') {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     const questions: Question[] = body;
-    const success = DataManager.saveQuestions(questions);
+    const success = await HybridDataManager.saveQuestions(questions);
 
     if (success) {
       return NextResponse.json<ApiResponse<Question[]>>({
@@ -70,18 +70,10 @@ export async function POST(request: NextRequest) {
         data: questions
       });
     } else {
-      // Check if we're in production
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json<ApiResponse<null>>({
-          success: false,
-          error: 'Question editing is not available in production. Questions are read-only in the deployed version.'
-        }, { status: 400 });
-      } else {
-        return NextResponse.json<ApiResponse<null>>({
-          success: false,
-          error: 'Failed to save questions'
-        }, { status: 500 });
-      }
+      return NextResponse.json<ApiResponse<null>>({
+        success: false,
+        error: 'Failed to save questions'
+      }, { status: 500 });
     }
 
   } catch (error) {

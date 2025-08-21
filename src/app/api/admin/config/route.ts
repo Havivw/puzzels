@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DataManager } from '@/lib/dataManager';
+import { HybridDataManager } from '@/lib/hybridDataManager';
 import { ApiResponse, AdminConfig } from '@/types';
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate admin access
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
     if (!validation.valid || validation.role !== 'admin') {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       }, { status: 403 });
     }
 
-    const config = DataManager.getConfig();
+    const config = await HybridDataManager.getConfig();
 
     return NextResponse.json<ApiResponse<AdminConfig>>({
       success: true,
@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate admin access
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
     if (!validation.valid || validation.role !== 'admin') {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
@@ -83,7 +83,7 @@ export async function PUT(request: NextRequest) {
       dashboardUuid
     };
 
-    const success = DataManager.updateConfig(newConfig);
+    const success = await HybridDataManager.updateConfig(newConfig);
 
     if (success) {
       return NextResponse.json<ApiResponse<AdminConfig>>({
@@ -91,18 +91,10 @@ export async function PUT(request: NextRequest) {
         data: newConfig
       });
     } else {
-      // Check if we're in production
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json<ApiResponse<null>>({
-          success: false,
-          error: 'Cannot update config in production environment. Use environment variables.'
-        }, { status: 400 });
-      } else {
-        return NextResponse.json<ApiResponse<null>>({
-          success: false,
-          error: 'Failed to update configuration'
-        }, { status: 500 });
-      }
+      return NextResponse.json<ApiResponse<null>>({
+        success: false,
+        error: 'Failed to update configuration'
+      }, { status: 500 });
     }
 
   } catch (error) {

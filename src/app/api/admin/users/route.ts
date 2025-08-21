@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DataManager } from '@/lib/dataManager';
+import { HybridDataManager } from '@/lib/hybridDataManager';
 import { ApiResponse, User } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate admin access
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
     if (!validation.valid || validation.role !== 'admin') {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       }, { status: 403 });
     }
 
-    const users = DataManager.getUsers();
+    const users = await HybridDataManager.getUsers();
 
     return NextResponse.json<ApiResponse<User[]>>({
       success: true,
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate admin access
-    const validation = DataManager.validateUser(uuid);
+    const validation = await HybridDataManager.validateUser(uuid);
     if (!validation.valid || validation.role !== 'admin') {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
@@ -72,10 +72,10 @@ export async function POST(request: NextRequest) {
 
     // Generate new user UUID
     const newUserUuid = `user-${uuidv4()}`;
-    const success = DataManager.addUser(name, newUserUuid);
+    const success = await HybridDataManager.addUser(name, newUserUuid);
 
     if (success) {
-      const users = DataManager.getUsers();
+      const users = await HybridDataManager.getUsers();
       const newUser = users.find(u => u.uuid === newUserUuid);
       
       return NextResponse.json<ApiResponse<User>>({
@@ -83,18 +83,10 @@ export async function POST(request: NextRequest) {
         data: newUser!
       });
     } else {
-      // Check if we're in production
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json<ApiResponse<null>>({
-          success: false,
-          error: 'User management is not available in production. Users are read-only in the deployed version.'
-        }, { status: 400 });
-      } else {
-        return NextResponse.json<ApiResponse<null>>({
-          success: false,
-          error: 'Failed to create user'
-        }, { status: 500 });
-      }
+      return NextResponse.json<ApiResponse<null>>({
+        success: false,
+        error: 'Failed to create user'
+      }, { status: 500 });
     }
 
   } catch (error) {
