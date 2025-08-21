@@ -998,17 +998,41 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                   </div>
                 </div>
 
+                {/* Test Section - Always Visible */}
+                <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-500/50 rounded-lg p-6 shadow-lg shadow-green-500/20">
+                  <h4 className="text-lg font-semibold text-green-300 mb-4 font-mono flex items-center space-x-2">
+                    <Shield className="w-5 h-5" />
+                    <span>SYSTEM STATUS</span>
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-mono">
+                    <div className="bg-gray-800/50 p-3 rounded border border-gray-600/50">
+                      <div className="text-green-400 font-semibold">Total Users</div>
+                      <div className="text-white text-lg">{users.length}</div>
+                    </div>
+                    <div className="bg-gray-800/50 p-3 rounded border border-gray-600/50">
+                      <div className="text-blue-400 font-semibold">Active Tab</div>
+                      <div className="text-white text-lg">{activeTab}</div>
+                    </div>
+                    <div className="bg-gray-800/50 p-3 rounded border border-gray-600/50">
+                      <div className="text-purple-400 font-semibold">Tab Working</div>
+                      <div className="text-white text-lg">✅ YES</div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Rate Limited Users */}
                 <div className="bg-gradient-to-br from-red-900/30 to-red-800/20 border border-red-500/50 rounded-lg p-6 shadow-lg shadow-red-500/20">
                   <h4 className="text-lg font-semibold text-red-300 mb-4 font-mono flex items-center space-x-2">
                     <Shield className="w-5 h-5" />
                     <span>ACTIVELY RATE LIMITED USERS</span>
                   </h4>
+
                   
                   {users.filter(user => getRateLimitStatus(user).hasAnyLock).length === 0 ? (
                     <div className="text-center py-8">
                       <p className="text-green-400 font-mono">✅ No users are currently rate limited.</p>
                       <p className="text-gray-400 font-mono text-sm">All users have normal access.</p>
+                      <p className="text-yellow-400 font-mono text-sm mt-2">💡 To test: Answer questions incorrectly 3 times or enter wrong hint passwords 3 times</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -1097,23 +1121,32 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                   <div className="space-y-3">
                     {users.map((user) => {
                       const status = getRateLimitStatus(user);
-                      const hasFailures = (user.rateLimitData?.consecutiveFailures || 0) > 0 || 
-                                       (user.rateLimitData?.hintPasswordFailures || 0) > 0;
+                      const hasAnswerFailures = (user.rateLimitData?.consecutiveFailures || 0) > 0;
+                      const hasHintFailures = (user.rateLimitData?.hintPasswordFailures || 0) > 0;
+                      const hasAnyFailures = hasAnswerFailures || hasHintFailures;
                       
                       return (
                         <div key={user.uuid} className={`bg-gray-800 border rounded-lg p-3 ${
-                          status.hasAnyLock ? 'border-red-500/50' : hasFailures ? 'border-yellow-500/50' : 'border-green-500/50'
+                          status.hasAnyLock ? 'border-red-500/50' : hasAnyFailures ? 'border-yellow-500/50' : 'border-green-500/50'
                         }`}>
                           <div className="flex justify-between items-center">
-                                                         <div className="flex-1">
+                            <div className="flex-1">
                                <div className="text-white font-semibold font-mono">{user.name}</div>
                                <div className="text-xs text-gray-400 font-mono">User Status</div>
                               
                               <div className="flex space-x-4 mt-2 text-sm">
-                                <div className={`font-mono ${status.answerLocked ? 'text-red-400' : hasFailures ? 'text-yellow-400' : 'text-green-400'}`}>
+                                <div className={`font-mono ${
+                                  status.answerLocked ? 'text-red-400' : 
+                                  hasAnswerFailures ? 'text-yellow-400' : 
+                                  'text-green-400'
+                                }`}>
                                   Answer: {user.rateLimitData?.consecutiveFailures || 0}/3
                                 </div>
-                                <div className={`font-mono ${status.hintPasswordLocked ? 'text-red-400' : hasFailures ? 'text-yellow-400' : 'text-green-400'}`}>
+                                <div className={`font-mono ${
+                                  status.hintPasswordLocked ? 'text-red-400' : 
+                                  hasHintFailures ? 'text-yellow-400' : 
+                                  'text-green-400'
+                                }`}>
                                   Hints: {user.rateLimitData?.hintPasswordFailures || 0}/3
                                 </div>
                               </div>
@@ -1122,7 +1155,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                             <div className="text-right">
                               {status.hasAnyLock ? (
                                 <div className="text-red-400 font-mono text-sm">🔒 LOCKED</div>
-                              ) : hasFailures ? (
+                              ) : hasAnyFailures ? (
                                 <div className="text-yellow-400 font-mono text-sm">⚠️ WARNING</div>
                               ) : (
                                 <div className="text-green-400 font-mono text-sm">✅ CLEAR</div>
