@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Question, User, AdminConfig, ValidationResult } from '@/types';
+import { Question, User, AdminConfig, ValidationResult, HintRoute } from '@/types';
 import { DatabaseManager } from './database';
 
 const DATA_DIR = path.join(process.cwd(), 'src/data');
@@ -412,6 +412,63 @@ export class HybridDataManager {
       }
     } catch (error) {
       console.error('Error resetting hint password failures:', error);
+    }
+  }
+
+  // Hint routes operations
+  static async getHintRoutes(): Promise<HintRoute[]> {
+    try {
+      if (this.isProduction()) {
+        return await DatabaseManager.getHintRoutes();
+      }
+
+      // For development, return empty array (no JSON file for hint routes)
+      return [];
+    } catch (error) {
+      console.error('Error getting hint routes:', error);
+      return [];
+    }
+  }
+
+  static async saveHintRoutes(routes: HintRoute[]): Promise<boolean> {
+    try {
+      if (this.isProduction()) {
+        return await DatabaseManager.saveHintRoutes(routes);
+      }
+
+      // For development, return false (no JSON file for hint routes)
+      return false;
+    } catch (error) {
+      console.error('Error saving hint routes:', error);
+      return false;
+    }
+  }
+
+  static async addHintRoute(route: HintRoute): Promise<boolean> {
+    try {
+      if (this.isProduction()) {
+        return await DatabaseManager.addHintRoute(route);
+      }
+
+      // For development, return false (no JSON file for hint routes)
+      return false;
+    } catch (error) {
+      console.error('Error adding hint route:', error);
+      return false;
+    }
+  }
+
+  static async removeHintRoute(uuid: string): Promise<boolean> {
+    try {
+      if (this.isProduction()) {
+        return await DatabaseManager.removeHintRoute(uuid);
+      }
+
+      // For development, return false (no JSON file for hint routes)
+      return false;
+    } catch (error) {
+      console.error('Error removing hint route:', error);
+      return false;
     }
   }
 

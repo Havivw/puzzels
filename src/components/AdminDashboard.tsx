@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AdminDashboardData, Question, User } from '@/types';
+import { AdminDashboardData, Question, User, HintRoute } from '@/types';
 import { sanitizeHtml, sanitizeErrorMessage } from '@/lib/security';
-import { Settings, Users, FileText, Plus, Trash2, Edit, Save, X, Copy, ExternalLink, Shield, RefreshCw, Link } from 'lucide-react';
+import { Settings, Users, FileText, Plus, Trash2, Edit, Save, X, Copy, ExternalLink, Shield, RefreshCw, Link, Key } from 'lucide-react';
 
 interface AdminDashboardProps {
   uuid: string;
 }
 
 export default function AdminDashboard({ uuid }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'questions' | 'users' | 'security' | 'access'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'questions' | 'users' | 'security' | 'access' | 'hint-routes'>('dashboard');
   const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -21,12 +21,16 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
   const [newDashboardUuid, setNewDashboardUuid] = useState('');
   const [updatingConfig, setUpdatingConfig] = useState(false);
   const [currentDashboardUuid, setCurrentDashboardUuid] = useState('');
+  const [hintRoutes, setHintRoutes] = useState<HintRoute[]>([]);
+  const [newHintContent, setNewHintContent] = useState('');
+  const [newHintExpiresAt, setNewHintExpiresAt] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
     fetchQuestions();
     fetchUsers();
     fetchCurrentConfig();
+    fetchHintRoutes();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -76,6 +80,82 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
       }
     } catch (error) {
       console.error('Failed to fetch config:', error);
+    }
+  };
+
+  const fetchHintRoutes = async () => {
+    try {
+      const response = await fetch(`/api/admin/hint-routes?uuid=${uuid}`);
+      const data = await response.json();
+      if (data.success) {
+        setHintRoutes(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch hint routes:', error);
+    }
+  };
+
+  const addHintRoute = async () => {
+    if (!newHintContent.trim()) {
+      alert('Please enter hint content');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/admin/hint-routes?uuid=${uuid}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          content: newHintContent.trim(),
+          expiresAt: newHintExpiresAt || undefined
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setHintRoutes([...hintRoutes, data.data]);
+        setNewHintContent('');
+        setNewHintExpiresAt('');
+        alert(`Hint route created successfully!\nUUID: ${data.data.uuid}\n\nShare this URL: ${window.location.origin}/${data.data.uuid}`);
+      } else {
+        alert(`Failed to create hint route: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to create hint route:', error);
+      alert('Failed to create hint route');
+    }
+  };
+
+  const deleteHintRoute = async (routeUuid: string) => {
+    if (!confirm('Are you sure you want to delete this hint route?')) return;
+    
+    try {
+      const response = await fetch(`/api/admin/hint-routes?uuid=${uuid}&routeUuid=${routeUuid}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setHintRoutes(hintRoutes.filter(r => r.uuid !== routeUuid));
+      }
+    } catch (error) {
+      console.error('Failed to delete hint route:', error);
+      alert('Failed to delete hint route');
+    }
+  };
+
+  const copyHintRouteUrl = async (routeUuid: string) => {
+    const url = `${window.location.origin}/${routeUuid}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('Hint route URL copied to clipboard!');
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('Hint route URL copied to clipboard!');
     }
   };
 
@@ -354,6 +434,19 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
               <div className="flex items-center space-x-2">
                 <Link className="w-5 h-5" />
                 <span>ACCESS URLS</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('hint-routes')}
+              className={`px-6 py-4 font-medium font-mono ${
+                activeTab === 'hint-routes'
+                  ? 'text-cyan-400 border-b-2 border-cyan-400'
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Key className="w-5 h-5" />
+                <span>HINT ROUTES</span>
               </div>
             </button>
           </div>
@@ -664,6 +757,147 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                     <div className="flex justify-between">
                       <span className="text-gray-400">Total Questions:</span>
                       <span className="text-cyan-300">{questions.length}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Hint Routes Tab */}
+            {activeTab === 'hint-routes' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold text-cyan-300 font-mono">HINT ROUTES MANAGEMENT</h3>
+                  <div className="text-sm text-gray-400 font-mono">
+                    🔑 CREATE CUSTOM HINT ACCESS PAGES
+                  </div>
+                </div>
+
+                {/* Create New Hint Route */}
+                <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 border border-purple-500/50 rounded-lg p-6 shadow-lg shadow-purple-500/20">
+                  <h4 className="text-lg font-semibold text-purple-300 mb-4 font-mono flex items-center space-x-2">
+                    <Plus className="w-5 h-5" />
+                    <span>CREATE NEW HINT ROUTE</span>
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-purple-300 mb-2 font-mono">HINT CONTENT</label>
+                      <textarea
+                        value={newHintContent}
+                        onChange={(e) => setNewHintContent(e.target.value)}
+                        placeholder="Enter the hint text that will be displayed on the route page..."
+                        className="w-full bg-gray-800 border border-purple-500/30 rounded-lg p-3 font-mono text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                        rows={4}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-purple-300 mb-2 font-mono">EXPIRATION DATE (OPTIONAL)</label>
+                      <input
+                        type="datetime-local"
+                        value={newHintExpiresAt}
+                        onChange={(e) => setNewHintExpiresAt(e.target.value)}
+                        className="bg-gray-800 border border-purple-500/30 rounded-lg p-3 font-mono text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                      />
+                    </div>
+
+                    <button
+                      onClick={addHintRoute}
+                      disabled={!newHintContent.trim()}
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-lg hover:from-purple-500 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 font-mono shadow-lg shadow-purple-500/30"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>CREATE HINT ROUTE</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Existing Hint Routes */}
+                <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-500/50 rounded-lg p-6 shadow-lg shadow-green-500/20">
+                  <h4 className="text-lg font-semibold text-green-300 mb-4 font-mono flex items-center space-x-2">
+                    <Key className="w-5 h-5" />
+                    <span>EXISTING HINT ROUTES</span>
+                  </h4>
+                  
+                  {hintRoutes.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400 font-mono">No hint routes created yet.</p>
+                      <p className="text-gray-500 font-mono text-sm">Create your first hint route above.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {hintRoutes.map((route) => (
+                        <div key={route.uuid} className="bg-gray-800 border border-green-500/30 rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                              <div className="text-sm text-green-300 font-mono mb-1">UUID: {route.uuid}</div>
+                              <div className="text-sm text-gray-400 font-mono mb-2">
+                                Created: {new Date(route.createdAt).toLocaleString()}
+                                {route.expiresAt && (
+                                  <span className="ml-4 text-yellow-400">
+                                    Expires: {new Date(route.expiresAt).toLocaleString()}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-white font-mono text-sm bg-gray-700 p-3 rounded border-l-4 border-green-500">
+                                {route.content}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex space-x-3">
+                            <button
+                              onClick={() => copyHintRouteUrl(route.uuid)}
+                              className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg hover:from-green-500 hover:to-green-600 flex items-center space-x-2 font-mono shadow-lg shadow-green-500/30"
+                            >
+                              <Copy className="w-4 h-4" />
+                              <span>COPY URL</span>
+                            </button>
+                            
+                            <button
+                              onClick={() => window.open(`${window.location.origin}/${route.uuid}`, '_blank')}
+                              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-lg hover:from-blue-500 hover:to-blue-600 flex items-center space-x-2 font-mono shadow-lg shadow-blue-500/30"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              <span>OPEN</span>
+                            </button>
+                            
+                            <button
+                              onClick={() => deleteHintRoute(route.uuid)}
+                              className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-lg hover:from-red-500 hover:to-red-600 flex items-center space-x-2 font-mono shadow-lg shadow-red-500/30"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span>DELETE</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Information Panel */}
+                <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-6">
+                  <h4 className="text-lg font-semibold text-yellow-300 mb-4 font-mono">ℹ️ HINT ROUTES INFORMATION</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-mono">
+                    <div className="space-y-2">
+                      <h5 className="text-yellow-300 font-semibold">🔑 HOW IT WORKS</h5>
+                      <ul className="text-yellow-200 space-y-1">
+                        <li>• Create custom hint content</li>
+                        <li>• System generates unique UUID</li>
+                        <li>• Accessible at /[uuid] route</li>
+                        <li>• No authentication required</li>
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <h5 className="text-yellow-300 font-semibold">📱 USAGE</h5>
+                      <ul className="text-yellow-200 space-y-1">
+                        <li>• Share UUID URLs with users</li>
+                        <li>• Temporary access codes</li>
+                        <li>• External hint sharing</li>
+                        <li>• Dynamic content delivery</li>
+                      </ul>
                     </div>
                   </div>
                 </div>

@@ -1,11 +1,12 @@
 import { createClient } from 'redis';
-import { Question, User, AdminConfig } from '@/types';
+import { Question, User, AdminConfig, HintRoute } from '@/types';
 
 // Database keys for 'puzzel' Redis database
 const KEYS = {
   QUESTIONS: 'puzzel:questions',
   USERS: 'puzzel:users',
-  CONFIG: 'puzzel:config'
+  CONFIG: 'puzzel:config',
+  HINT_ROUTES: 'puzzel:hint_routes'
 };
 
 // Create Redis client instance
@@ -362,6 +363,66 @@ export class DatabaseManager {
     }
   }
 
+  // Hint routes operations
+  static async getHintRoutes(): Promise<HintRoute[]> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const client = await getRedisClient();
+        const routes = await client.get(KEYS.HINT_ROUTES);
+        return routes ? JSON.parse(routes) : [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getting hint routes from database:', error);
+      return [];
+    }
+  }
+
+  static async saveHintRoutes(routes: HintRoute[]): Promise<boolean> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const client = await getRedisClient();
+        await client.set(KEYS.HINT_ROUTES, JSON.stringify(routes));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error saving hint routes to database:', error);
+      return false;
+    }
+  }
+
+  static async addHintRoute(route: HintRoute): Promise<boolean> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const routes = await this.getHintRoutes();
+        routes.push(route);
+        return await this.saveHintRoutes(routes);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error adding hint route:', error);
+      return false;
+    }
+  }
+
+  static async removeHintRoute(uuid: string): Promise<boolean> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const routes = await this.getHintRoutes();
+        const filteredRoutes = routes.filter(r => r.uuid !== uuid);
+        if (filteredRoutes.length === routes.length) {
+          return false; // Route not found
+        }
+        return await this.saveHintRoutes(filteredRoutes);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error removing hint route:', error);
+      return false;
+    }
+  }
+
   // Initialize database with default data
   static async initializeDatabase(): Promise<void> {
     try {
@@ -424,6 +485,20 @@ export class DatabaseManager {
           dashboardUuid: 'dash-52dc-2330-49f1-89e9-00fb6440cd5b'
         };
         await this.saveConfig(defaultConfig);
+      }
+
+      // Initialize hint routes if they don't exist
+      const existingHintRoutes = await this.getHintRoutes();
+      if (existingHintRoutes.length === 0) {
+        const defaultHintRoutes: HintRoute[] = [
+          {
+            uuid: 'hint-demo-1234-5678-abcd-efgh',
+            content: 'This is a demo hint route. You can create your own custom hint pages!',
+            createdAt: new Date().toISOString(),
+            isActive: true
+          }
+        ];
+        await this.saveHintRoutes(defaultHintRoutes);
       }
 
       console.log('Database initialized successfully');

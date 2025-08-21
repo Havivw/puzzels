@@ -127,6 +127,14 @@ export interface DashboardData {
   lastUpdated: string;
 }
 
+export interface HintRoute {
+  uuid: string;
+  content: string;
+  createdAt: string;
+  expiresAt?: string; // Optional expiration
+  isActive: boolean;
+}
+
 export interface AdminDashboardData extends DashboardData {
   users: (UserProgress & { uuid: string })[];
 }
