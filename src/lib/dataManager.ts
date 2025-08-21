@@ -10,13 +10,8 @@ export class DataManager {
   private static configPath = path.join(DATA_DIR, 'config.json');
 
   // Read operations
-  static async getQuestions(): Promise<Question[]> {
+  static getQuestions(): Question[] {
     try {
-      // In production, use database
-      if (process.env.NODE_ENV === 'production') {
-        return await ProductionDatabase.getQuestions();
-      }
-
       // In development, use JSON file
       const data = fs.readFileSync(this.questionsPath, 'utf8');
       return JSON.parse(data);
