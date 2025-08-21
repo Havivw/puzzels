@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HybridDataManager } from '@/lib/hybridDataManager';
-import { ApiResponse, QuestionResponse } from '@/types';
+import { ApiResponse, QuestionResponse, SafeQuestion } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,8 +36,16 @@ export async function GET(request: NextRequest) {
       }, { status: 404 });
     }
 
+    // Filter out sensitive data from question
+    const safeQuestion: SafeQuestion = {
+      id: currentQuestion.id,
+      text: currentQuestion.text,
+      order: currentQuestion.order
+      // Deliberately exclude: answer, hints, hintPassword
+    };
+
     const response: QuestionResponse = {
-      question: currentQuestion,
+      question: safeQuestion,
       isLastQuestion: user.currentQuestion >= questions.length,
       progress: {
         current: user.currentQuestion,

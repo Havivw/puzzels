@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HybridDataManager } from '@/lib/hybridDataManager';
-import { ApiResponse, AnswerResponse, AnswerRequest } from '@/types';
+import { ApiResponse, AnswerResponse, AnswerRequest, SafeQuestion } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -80,9 +80,16 @@ export async function POST(request: NextRequest) {
       const nextQuestionOrder = user.currentQuestion + 1;
       const nextQuestion = questions.find(q => q.order === nextQuestionOrder);
       
+      // Filter sensitive data from next question
+      const safeNextQuestion: SafeQuestion | undefined = nextQuestion ? {
+        id: nextQuestion.id,
+        text: nextQuestion.text,
+        order: nextQuestion.order
+      } : undefined;
+      
       response = {
         correct: true,
-        nextQuestion: nextQuestion,
+        nextQuestion: safeNextQuestion,
         completed: !nextQuestion,
         progress: {
           current: nextQuestionOrder,

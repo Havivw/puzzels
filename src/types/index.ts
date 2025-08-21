@@ -9,6 +9,13 @@ export interface Question {
   order: number;
 }
 
+// Safe question type that excludes sensitive data for client responses
+export interface SafeQuestion {
+  id: string;
+  text: string;
+  order: number;
+}
+
 export interface User {
   uuid: string;
   name: string;
@@ -43,7 +50,7 @@ export interface ApiResponse<T> {
 }
 
 export interface QuestionResponse {
-  question: Question;
+  question: SafeQuestion;
   isLastQuestion: boolean;
   progress: {
     current: number;
@@ -73,7 +80,7 @@ export interface HintResponse {
 
 export interface AnswerResponse {
   correct: boolean;
-  nextQuestion?: Question;
+  nextQuestion?: SafeQuestion;
   completed?: boolean;
   progress: {
     current: number;
