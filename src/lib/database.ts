@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
 import { Question, User, AdminConfig } from '@/types';
 
 // Database keys for 'puzzel' Redis database
@@ -8,13 +8,33 @@ const KEYS = {
   CONFIG: 'puzzel:config'
 };
 
+// Create Redis client instance
+let redisClient: ReturnType<typeof createClient> | null = null;
+
+async function getRedisClient() {
+  if (!redisClient) {
+    redisClient = createClient({
+      url: process.env.REDIS_URL
+    });
+    
+    redisClient.on('error', (err) => {
+      console.error('Redis Client Error:', err);
+    });
+    
+    await redisClient.connect();
+  }
+  
+  return redisClient;
+}
+
 export class DatabaseManager {
   // Questions operations
   static async getQuestions(): Promise<Question[]> {
     try {
       if (process.env.NODE_ENV === 'production') {
-        const questions = await kv.get<Question[]>(KEYS.QUESTIONS);
-        return questions || [];
+        const client = await getRedisClient();
+        const questions = await client.get(KEYS.QUESTIONS);
+        return questions ? JSON.parse(questions) : [];
       }
       return [];
     } catch (error) {
@@ -26,7 +46,8 @@ export class DatabaseManager {
   static async saveQuestions(questions: Question[]): Promise<boolean> {
     try {
       if (process.env.NODE_ENV === 'production') {
-        await kv.set(KEYS.QUESTIONS, questions);
+        const client = await getRedisClient();
+        await client.set(KEYS.QUESTIONS, JSON.stringify(questions));
         return true;
       }
       return false;
@@ -40,8 +61,9 @@ export class DatabaseManager {
   static async getUsers(): Promise<User[]> {
     try {
       if (process.env.NODE_ENV === 'production') {
-        const users = await kv.get<User[]>(KEYS.USERS);
-        return users || [];
+        const client = await getRedisClient();
+        const users = await client.get(KEYS.USERS);
+        return users ? JSON.parse(users) : [];
       }
       return [];
     } catch (error) {
@@ -53,7 +75,8 @@ export class DatabaseManager {
   static async saveUsers(users: User[]): Promise<boolean> {
     try {
       if (process.env.NODE_ENV === 'production') {
-        await kv.set(KEYS.USERS, users);
+        const client = await getRedisClient();
+        await client.set(KEYS.USERS, JSON.stringify(users));
         return true;
       }
       return false;
@@ -67,8 +90,9 @@ export class DatabaseManager {
   static async getConfig(): Promise<AdminConfig> {
     try {
       if (process.env.NODE_ENV === 'production') {
-        const config = await kv.get<AdminConfig>(KEYS.CONFIG);
-        return config || {
+        const client = await getRedisClient();
+        const config = await client.get(KEYS.CONFIG);
+        return config ? JSON.parse(config) : {
           adminUuid: 'admin-b290-6877-42c1-afe1-0e40f0098df6',
           dashboardUuid: 'dash-52dc-2330-49f1-89e9-00fb6440cd5b'
         };
@@ -89,7 +113,8 @@ export class DatabaseManager {
   static async saveConfig(config: AdminConfig): Promise<boolean> {
     try {
       if (process.env.NODE_ENV === 'production') {
-        await kv.set(KEYS.CONFIG, config);
+        const client = await getRedisClient();
+        await client.set(KEYS.CONFIG, JSON.stringify(config));
         return true;
       }
       return false;
@@ -292,7 +317,7 @@ export class DatabaseManager {
 
       // Initialize config if it doesn't exist
       const existingConfig = await this.getConfig();
-      if (!existingConfig) {
+      if (!existingConfig.adminUuid) {
         const defaultConfig: AdminConfig = {
           adminUuid: 'admin-b290-6877-42c1-afe1-0e40f0098df6',
           dashboardUuid: 'dash-52dc-2330-49f1-89e9-00fb6440cd5b'

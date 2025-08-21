@@ -63,7 +63,7 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
       } else {
         setFeedback({ type: 'error', message: data.error || 'Failed to load question' });
       }
-    } catch (error) {
+    } catch {
       setFeedback({ type: 'error', message: 'Failed to load question' });
     } finally {
       setLoading(false);
@@ -123,7 +123,7 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
       } else {
         setFeedback({ type: 'error', message: data.error || 'Failed to submit answer' });
       }
-    } catch (error) {
+    } catch {
       setFeedback({ type: 'error', message: 'Failed to submit answer' });
     } finally {
       setSubmitting(false);
@@ -171,7 +171,7 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
       } else {
         setFeedback({ type: 'error', message: data.error || 'Failed to request hints' });
       }
-    } catch (error) {
+    } catch {
       setFeedback({ type: 'error', message: 'Failed to request hints' });
     } finally {
       setRequestingHint(false);

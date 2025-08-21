@@ -172,7 +172,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
     try {
       await navigator.clipboard.writeText(url);
       alert(`URL copied to clipboard for ${userName}!`);
-    } catch (error) {
+    } catch {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = url;
@@ -232,7 +232,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
       } else {
         alert(`Failed to update UUIDs: ${data.error}`);
       }
-    } catch (error) {
+    } catch {
       alert('Failed to update UUIDs');
     } finally {
       setUpdatingConfig(false);
@@ -243,7 +243,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
     try {
       await navigator.clipboard.writeText(url);
       alert(`${type} URL copied to clipboard!`);
-    } catch (error) {
+    } catch {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = url;

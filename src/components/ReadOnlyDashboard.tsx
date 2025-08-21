@@ -32,7 +32,7 @@ export default function ReadOnlyDashboard({ uuid }: ReadOnlyDashboardProps) {
       } else {
         setError(data.error || 'Failed to load dashboard data');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
@@ -71,17 +71,7 @@ export default function ReadOnlyDashboard({ uuid }: ReadOnlyDashboardProps) {
 
   if (!dashboardData) return null;
 
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600 bg-green-100';
-    if (percentage >= 50) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
-  };
 
-  const getProgressBarColor = (percentage: number) => {
-    if (percentage >= 80) return 'bg-green-500';
-    if (percentage >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
 
   const sortedUsers = [...dashboardData.users].sort((a, b) => b.percentage - a.percentage);
 
