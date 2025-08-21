@@ -10,7 +10,7 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ uuid }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'questions' | 'users' | 'security' | 'access' | 'hint-routes'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'questions' | 'users' | 'security' | 'access' | 'hint-routes' | 'rate-limits'>('dashboard');
   const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -151,12 +151,83 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = url;
-      document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
       alert('Hint route URL copied to clipboard!');
     }
+  };
+
+  const resetUserRateLimit = async (userUuid: string, type: 'answer' | 'hint-password' | 'both') => {
+    if (!confirm(`Are you sure you want to reset ${type} rate limit for this user?`)) return;
+    
+    try {
+      if (type === 'answer' || type === 'both') {
+        // Reset answer failures
+        const userIndex = users.findIndex(u => u.uuid === userUuid);
+        if (userIndex !== -1 && users[userIndex].rateLimitData) {
+          users[userIndex].rateLimitData!.consecutiveFailures = 0;
+          delete users[userIndex].rateLimitData!.lockedUntil;
+          // Update the local state
+          setUsers([...users]);
+        }
+      }
+      
+      if (type === 'hint-password' || type === 'both') {
+        // Reset hint password failures
+        const userIndex = users.findIndex(u => u.uuid === userUuid);
+        if (userIndex !== -1 && users[userIndex].rateLimitData) {
+          users[userIndex].rateLimitData!.hintPasswordFailures = 0;
+          delete users[userIndex].rateLimitData!.hintPasswordLockedUntil;
+          // Update the local state
+          setUsers([...users]);
+        }
+      }
+      
+      alert(`Rate limit reset successfully for ${type}!`);
+    } catch (error) {
+      console.error('Failed to reset rate limit:', error);
+      alert('Failed to reset rate limit');
+    }
+  };
+
+  const getRateLimitStatus = (user: User) => {
+    const now = new Date();
+    const status = {
+      answerLocked: false,
+      answerTimeRemaining: 0,
+      hintPasswordLocked: false,
+      hintPasswordTimeRemaining: 0,
+      hasAnyLock: false
+    };
+
+    // Check answer rate limit
+    if (user.rateLimitData?.lockedUntil) {
+      const lockUntil = new Date(user.rateLimitData.lockedUntil);
+      if (now < lockUntil) {
+        status.answerLocked = true;
+        status.answerTimeRemaining = Math.ceil((lockUntil.getTime() - now.getTime()) / 1000);
+        status.hasAnyLock = true;
+      }
+    }
+
+    // Check hint password rate limit
+    if (user.rateLimitData?.hintPasswordLockedUntil) {
+      const lockUntil = new Date(user.rateLimitData.hintPasswordLockedUntil);
+      if (now < lockUntil) {
+        status.hintPasswordLocked = true;
+        status.hintPasswordTimeRemaining = Math.ceil((lockUntil.getTime() - now.getTime()) / 1000);
+        status.hasAnyLock = true;
+      }
+    }
+
+    return status;
+  };
+
+  const formatTimeRemaining = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
   };
 
   const saveQuestions = async () => {
@@ -447,6 +518,19 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
               <div className="flex items-center space-x-2">
                 <Key className="w-5 h-5" />
                 <span>HINT ROUTES</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('rate-limits')}
+              className={`px-6 py-4 font-medium font-mono ${
+                activeTab === 'rate-limits'
+                  ? 'text-cyan-400 border-b-2 border-cyan-400'
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Shield className="w-5 h-5" />
+                <span>RATE LIMITS</span>
               </div>
             </button>
           </div>
@@ -897,6 +981,180 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                         <li>• Temporary access codes</li>
                         <li>• External hint sharing</li>
                         <li>• Dynamic content delivery</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Rate Limits Tab */}
+            {activeTab === 'rate-limits' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold text-cyan-300 font-mono">RATE LIMIT MONITORING</h3>
+                  <div className="text-sm text-gray-400 font-mono">
+                    🚫 MONITOR AND MANAGE USER RATE LIMITS
+                  </div>
+                </div>
+
+                {/* Rate Limited Users */}
+                <div className="bg-gradient-to-br from-red-900/30 to-red-800/20 border border-red-500/50 rounded-lg p-6 shadow-lg shadow-red-500/20">
+                  <h4 className="text-lg font-semibold text-red-300 mb-4 font-mono flex items-center space-x-2">
+                    <Shield className="w-5 h-5" />
+                    <span>ACTIVELY RATE LIMITED USERS</span>
+                  </h4>
+                  
+                  {users.filter(user => getRateLimitStatus(user).hasAnyLock).length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-green-400 font-mono">✅ No users are currently rate limited.</p>
+                      <p className="text-gray-400 font-mono text-sm">All users have normal access.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {users.filter(user => getRateLimitStatus(user).hasAnyLock).map((user) => {
+                        const status = getRateLimitStatus(user);
+                        return (
+                          <div key={user.uuid} className="bg-gray-800 border border-red-500/30 rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex-1">
+                                <div className="text-lg font-semibold text-white font-mono">{user.name}</div>
+                                <div className="text-sm text-gray-400 font-mono">Rate Limited User</div>
+                                
+                                {/* Answer Rate Limit Status */}
+                                {status.answerLocked && (
+                                  <div className="mt-2 p-3 bg-red-900/20 border border-red-600/30 rounded">
+                                    <div className="text-red-300 font-semibold font-mono">🔒 ANSWER RATE LIMITED</div>
+                                    <div className="text-red-200 text-sm font-mono">
+                                      Time remaining: {formatTimeRemaining(status.answerTimeRemaining)}
+                                    </div>
+                                    <div className="text-red-200 text-sm font-mono">
+                                      Failures: {user.rateLimitData?.consecutiveFailures || 0}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Hint Password Rate Limit Status */}
+                                {status.hintPasswordLocked && (
+                                  <div className="mt-2 p-3 bg-orange-900/20 border border-orange-600/30 rounded">
+                                    <div className="text-orange-300 font-semibold font-mono">🔑 HINT PASSWORD RATE LIMITED</div>
+                                    <div className="text-orange-200 text-sm font-mono">
+                                      Time remaining: {formatTimeRemaining(status.hintPasswordTimeRemaining)}
+                                    </div>
+                                    <div className="text-orange-200 text-sm font-mono">
+                                      Failures: {user.rateLimitData?.hintPasswordFailures || 0}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="flex space-x-3">
+                              {status.answerLocked && (
+                                <button
+                                  onClick={() => resetUserRateLimit(user.uuid, 'answer')}
+                                  className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-lg hover:from-red-500 hover:to-red-600 flex items-center space-x-2 font-mono shadow-lg shadow-red-500/30"
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                  <span>RESET ANSWER LOCK</span>
+                                </button>
+                              )}
+                              
+                              {status.hintPasswordLocked && (
+                                <button
+                                  onClick={() => resetUserRateLimit(user.uuid, 'hint-password')}
+                                  className="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-4 py-2 rounded-lg hover:from-orange-500 hover:to-orange-600 flex items-center space-x-2 font-mono shadow-lg shadow-orange-500/30"
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                  <span>RESET HINT LOCK</span>
+                                </button>
+                              )}
+                              
+                              {(status.answerLocked && status.hintPasswordLocked) && (
+                                <button
+                                  onClick={() => resetUserRateLimit(user.uuid, 'both')}
+                                  className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-2 rounded-lg hover:from-purple-500 hover:to-purple-600 flex items-center space-x-2 font-mono shadow-lg shadow-purple-500/30"
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                  <span>RESET BOTH LOCKS</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* All Users Rate Limit Status */}
+                <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-500/50 rounded-lg p-6 shadow-lg shadow-blue-500/20">
+                  <h4 className="text-lg font-semibold text-blue-300 mb-4 font-mono flex items-center space-x-2">
+                    <Users className="w-5 h-5" />
+                    <span>ALL USERS RATE LIMIT STATUS</span>
+                  </h4>
+                  
+                  <div className="space-y-3">
+                    {users.map((user) => {
+                      const status = getRateLimitStatus(user);
+                      const hasFailures = (user.rateLimitData?.consecutiveFailures || 0) > 0 || 
+                                       (user.rateLimitData?.hintPasswordFailures || 0) > 0;
+                      
+                      return (
+                        <div key={user.uuid} className={`bg-gray-800 border rounded-lg p-3 ${
+                          status.hasAnyLock ? 'border-red-500/50' : hasFailures ? 'border-yellow-500/50' : 'border-green-500/50'
+                        }`}>
+                          <div className="flex justify-between items-center">
+                                                         <div className="flex-1">
+                               <div className="text-white font-semibold font-mono">{user.name}</div>
+                               <div className="text-xs text-gray-400 font-mono">User Status</div>
+                              
+                              <div className="flex space-x-4 mt-2 text-sm">
+                                <div className={`font-mono ${status.answerLocked ? 'text-red-400' : hasFailures ? 'text-yellow-400' : 'text-green-400'}`}>
+                                  Answer: {user.rateLimitData?.consecutiveFailures || 0}/3
+                                </div>
+                                <div className={`font-mono ${status.hintPasswordLocked ? 'text-red-400' : hasFailures ? 'text-yellow-400' : 'text-green-400'}`}>
+                                  Hints: {user.rateLimitData?.hintPasswordFailures || 0}/3
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="text-right">
+                              {status.hasAnyLock ? (
+                                <div className="text-red-400 font-mono text-sm">🔒 LOCKED</div>
+                              ) : hasFailures ? (
+                                <div className="text-yellow-400 font-mono text-sm">⚠️ WARNING</div>
+                              ) : (
+                                <div className="text-green-400 font-mono text-sm">✅ CLEAR</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Information Panel */}
+                <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-6">
+                  <h4 className="text-lg font-semibold text-yellow-300 mb-4 font-mono">ℹ️ RATE LIMITING INFORMATION</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-mono">
+                    <div className="space-y-2">
+                      <h5 className="text-yellow-300 font-semibold">🔒 ANSWER RATE LIMITING</h5>
+                      <ul className="text-yellow-200 space-y-1">
+                        <li>• 3 consecutive failures = 10 minute lockout</li>
+                        <li>• Lock automatically expires after time</li>
+                        <li>• Admin can manually reset locks</li>
+                        <li>• Failures reset on correct answer</li>
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <h5 className="text-yellow-300 font-semibold">🔑 HINT PASSWORD RATE LIMITING</h5>
+                      <ul className="text-yellow-200 space-y-1">
+                        <li>• 3 consecutive failures = 25 minute lockout</li>
+                        <li>• Lock automatically expires after time</li>
+                        <li>• Admin can manually reset locks</li>
+                        <li>• Failures reset on correct password</li>
                       </ul>
                     </div>
                   </div>
