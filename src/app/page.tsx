@@ -35,7 +35,7 @@ export default function Home() {
       } else {
         setError('Invalid UUID. Access denied.');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to validate user. Please try again.');
     } finally {
       setLoading(false);

@@ -1,0 +1,56 @@
+[
+  {
+    "id": "q1",
+    "text": "What has keys but can't open locks?",
+    "answer": "piano",
+    "hints": [
+      "It makes music",
+      "You press them to create sound"
+    ],
+    "hintPassword": "music123",
+    "order": 1
+  },
+  {
+    "id": "q2",
+    "text": "I am tall when I am young, and short when I am old. What am I?",
+    "answer": "candle",
+    "hints": [
+      "I give light",
+      "I melt as time passes"
+    ],
+    "hintPassword": "light789",
+    "order": 2
+  },
+  {
+    "id": "q3",
+    "text": "What has hands but cannot clap?",
+    "answer": "clock",
+    "hints": [
+      "I tell time",
+      "You look at me to know the hour"
+    ],
+    "order": 3
+  },
+  {
+    "id": "q4",
+    "text": "What gets wet while drying?",
+    "answer": "towel",
+    "hints": [
+      "Found in bathrooms",
+      "Used after showering"
+    ],
+    "hintPassword": "bath321",
+    "order": 4
+  },
+  {
+    "id": "q5",
+    "text": "I have cities, but no houses. I have mountains, but no trees. I have water, but no fish. What am I?",
+    "answer": "map",
+    "hints": [
+      "I show locations",
+      "I help with navigation"
+    ],
+    "hintPassword": "gps987",
+    "order": 5
+  }
+]
