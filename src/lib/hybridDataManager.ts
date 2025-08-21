@@ -291,9 +291,17 @@ export class HybridDataManager {
       if (now < lockUntil) {
         const lockTimeRemaining = Math.ceil((lockUntil.getTime() - now.getTime()) / 1000);
         return { rateLimited: true, lockTimeRemaining };
+      } else {
+        // Lock has expired, reset answer failures
+        const userIndex = users.findIndex(u => u.uuid === uuid);
+        if (userIndex !== -1) {
+          users[userIndex].rateLimitData!.consecutiveFailures = 0;
+          delete users[userIndex].rateLimitData!.lockedUntil;
+          await this.saveUsers(users);
+        }
+        
+        return { rateLimited: false, lockTimeRemaining: 0 };
       }
-
-      return { rateLimited: false, lockTimeRemaining: 0 };
     } catch (error) {
       console.error('Error checking rate limit:', error);
       return { rateLimited: false, lockTimeRemaining: 0 };
@@ -380,11 +388,14 @@ export class HybridDataManager {
           lockTimeRemaining 
         };
       } else {
-        // Lock has expired, reset hint password failures
+        // Lock has expired, reset hint password failures AND answer failures
         const userIndex = users.findIndex(u => u.uuid === uuid);
         if (userIndex !== -1) {
           users[userIndex].rateLimitData!.hintPasswordFailures = 0;
           delete users[userIndex].rateLimitData!.hintPasswordLockedUntil;
+          // Also reset answer failures when hint password lock expires
+          users[userIndex].rateLimitData!.consecutiveFailures = 0;
+          delete users[userIndex].rateLimitData!.lockedUntil;
           await this.saveUsers(users);
         }
         
@@ -408,6 +419,9 @@ export class HybridDataManager {
       if (userIndex !== -1 && users[userIndex].rateLimitData) {
         users[userIndex].rateLimitData!.hintPasswordFailures = 0;
         delete users[userIndex].rateLimitData!.hintPasswordLockedUntil;
+        // Also reset answer failures when hint password failures are reset
+        users[userIndex].rateLimitData!.consecutiveFailures = 0;
+        delete users[userIndex].rateLimitData!.lockedUntil;
         await this.saveUsers(users);
       }
     } catch (error) {
