@@ -23,6 +23,18 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
+    const user = validation.user;
+
+    // SECURITY: Check if user is trying to access hints for their current question only
+    console.log('[HINT_API] User current question:', user.currentQuestion, 'Requested question:', questionId);
+    if (questionId !== `q${user.currentQuestion}`) {
+      console.log('[HINT_API] SECURITY VIOLATION: User tried to access hints for unauthorized question');
+      return NextResponse.json<ApiResponse<null>>({
+        success: false,
+        error: 'You can only access hints for your current question'
+      }, { status: 403 });
+    }
+
     // Check hint password rate limit
     console.log('[HINT_API] Checking hint password rate limit for user:', uuid);
     const hintRateLimitCheck = await HybridDataManager.checkHintPasswordRateLimit(uuid);

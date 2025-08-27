@@ -13,5 +13,27 @@
       "hintPasswordFailures": 3,
       "hintPasswordLockedUntil": "2025-08-27T20:24:38.569Z"
     }
+  },
+  {
+    "uuid": "user-fresh-test-123",
+    "name": "FreshUser",
+    "currentQuestion": 1,
+    "completedQuestions": [],
+    "createdAt": "2025-08-27T20:10:00.000Z",
+    "lastActivity": "2025-08-27T20:08:33.717Z",
+    "rateLimitData": {
+      "consecutiveFailures": 0,
+      "totalFailures": 0,
+      "hintPasswordFailures": 3,
+      "hintPasswordLockedUntil": "2025-08-27T20:33:33.717Z"
+    }
+  },
+  {
+    "uuid": "user-test-security-123",
+    "name": "SecurityTestUser",
+    "currentQuestion": 3,
+    "completedQuestions": ["q1", "q2"],
+    "createdAt": "2025-08-27T20:15:00.000Z",
+    "lastActivity": "2025-08-27T20:15:00.000Z"
   }
 ]

@@ -93,13 +93,28 @@ export class DatabaseManager {
   static async saveUsers(users: User[]): Promise<boolean> {
     try {
       if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
+        console.log('[REDIS] Saving users to Redis, count:', users.length);
         const client = await getRedisClient();
-        await client.set(KEYS.USERS, JSON.stringify(users));
+        const serializedUsers = JSON.stringify(users);
+        console.log('[REDIS] Serialized users size:', serializedUsers.length, 'bytes');
+        
+        await client.set(KEYS.USERS, serializedUsers);
+        
+        // Verify the save by reading back
+        const verification = await client.get(KEYS.USERS);
+        const success = verification !== null;
+        console.log('[REDIS] Save verification:', success ? 'SUCCESS' : 'FAILED');
+        
+        if (!success) {
+          console.error('[REDIS] Critical: Users data was not saved to Redis!');
+          return false;
+        }
+        
         return true;
       }
       return false;
     } catch (error) {
-      console.error('Error saving users to database:', error);
+      console.error('[REDIS] Error saving users to Redis:', error);
       return false;
     }
   }
