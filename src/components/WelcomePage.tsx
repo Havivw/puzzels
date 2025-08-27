@@ -23,17 +23,18 @@ export default function WelcomePage() {
             </div>
           </div>
           
-          <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent font-mono">
+          <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-green-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent font-mono">
             HUSKEYS ESCAPE
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-300 font-mono">
-            &gt; Neural Puzzle Challenge Protocol
+          <p className="text-xl md:text-2xl text-green-300 font-mono animate-pulse">
+            🎯 GAME IS NOW ACTIVE! 🎯
           </p>
           
           <div className="flex justify-center items-center space-x-2 text-green-400 font-mono">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm">SYSTEM STATUS: ONLINE</span>
+            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-lg font-bold">🚀 SYSTEM STATUS: LIVE & READY! 🚀</span>
+            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
           </div>
         </div>
 
@@ -70,6 +71,58 @@ export default function WelcomePage() {
           </div>
         </div>
 
+        {/* Rules Section */}
+        <div className="bg-red-900/20 border border-red-500/50 rounded-2xl p-8 shadow-lg shadow-red-500/20 backdrop-blur-sm mb-8">
+          <h2 className="text-2xl font-bold text-red-300 mb-6 font-mono flex items-center justify-center">
+            ⚠️ NEURAL PROTOCOL GUIDELINES ⚠️
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300 font-mono">
+            <div className="space-y-3">
+              <div className="flex items-start space-x-2">
+                <span className="text-red-400 font-bold">01.</span>
+                <p><span className="text-cyan-400">SECURITY TESTING:</span> Found vulnerabilities? Report them responsibly - we appreciate ethical disclosure.</p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-red-400 font-bold">02.</span>
+                <p><span className="text-yellow-400">BRUTE FORCE DETECTION:</span> Our AI monitors attempt patterns. Excessive automation triggers permanent lockout.</p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-red-400 font-bold">03.</span>
+                <p><span className="text-purple-400">ACCESS CREDENTIALS:</span> Your UUID is a private key. Guard it like classified intel.</p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-red-400 font-bold">04.</span>
+                <p><span className="text-green-400">SOCIAL ENGINEERING:</span> Play fair, think independently. No collaboration or information sharing.</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-start space-x-2">
+                <span className="text-red-400 font-bold">05.</span>
+                <p><span className="text-cyan-400">REAL-WORLD INTELLIGENCE:</span> Hints exist in the physical world around you. Look beyond the screen.</p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-red-400 font-bold">06.</span>
+                <p><span className="text-blue-400">RATE LIMITING:</span> Failed attempts trigger cooldown periods. Patience is part of the challenge.</p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-red-400 font-bold">07.</span>
+                <p><span className="text-orange-400">SYSTEM INTEGRITY:</span> Any attempt to disrupt other participants results in immediate termination.</p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-red-400 font-bold">08.</span>
+                <p><span className="text-pink-400">COGNITIVE ENHANCEMENT:</span> Think creatively, question everything, but respect the neural protocol.</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 p-4 bg-gray-900/50 border border-yellow-500/30 rounded-lg">
+            <p className="text-center text-yellow-300 font-mono text-sm">
+              🧠 <span className="font-bold">REMEMBER:</span> This is a test of intelligence, creativity, and persistence - not technical exploitation. 
+              <br />
+              <span className="text-gray-400">Violators will be tracked, logged, and permanently banned from the neural network.</span>
+            </p>
+          </div>
+        </div>
+
         {/* CTA Section */}
         <div className="space-y-6">
           <div className="bg-gradient-to-r from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 rounded-2xl p-8">
@@ -77,7 +130,7 @@ export default function WelcomePage() {
               🚀 READY TO BEGIN YOUR JOURNEY?
             </h2>
             <p className="text-gray-300 mb-6 font-mono">
-              Enter the neural enhancement chamber and start your cognitive challenge
+              Accept the neural protocol guidelines and enter the cognitive enhancement chamber
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

@@ -51,14 +51,14 @@ export default function ComingSoonPage() {
           </div>
 
           {/* Main heading */}
-          <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 mb-6 font-mono tracking-wider animate-pulse">
+          <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-yellow-500 mb-6 font-mono tracking-wider animate-pulse">
             HUSKEYS ESCAPE
           </h1>
 
           {/* Subtitle */}
           <div className="mb-8">
-            <h2 className="text-2xl md:text-3xl text-cyan-300 mb-4 font-mono tracking-wide">
-              COMING SOON
+            <h2 className="text-3xl md:text-4xl text-red-300 mb-4 font-mono tracking-wide animate-bounce">
+              🚧 COMING SOON 🚧
             </h2>
             <div className="w-32 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 mx-auto rounded-full shadow-lg shadow-cyan-500/50"></div>
           </div>
