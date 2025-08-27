@@ -1369,14 +1369,14 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                                   hasAnswerFailures ? 'text-yellow-400' : 
                                   'text-green-400'
                                 }`}>
-                                  Answer: {user.rateLimitData?.consecutiveFailures || 0}/3
+                                  Answer: {user.rateLimitData?.consecutiveFailures || 0}/{currentConfig?.rateLimitConfig?.answerAttempts?.maxFailures || 3}
                                 </div>
                                 <div className={`font-mono ${
                                   status.hintPasswordLocked ? 'text-red-400' : 
                                   hasHintFailures ? 'text-yellow-400' : 
                                   'text-green-400'
                                 }`}>
-                                  Hints: {user.rateLimitData?.hintPasswordFailures || 0}/3
+                                  Hints: {user.rateLimitData?.hintPasswordFailures || 0}/{currentConfig?.rateLimitConfig?.hintPasswordAttempts?.maxFailures || 3}
                                 </div>
                               </div>
                             </div>
