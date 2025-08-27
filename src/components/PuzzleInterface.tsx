@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { SafeQuestion, QuestionResponse, AnswerResponse } from '@/types';
-import { sanitizeHtml, sanitizeErrorMessage } from '@/lib/security';
+import { User, Question, QuestionResponse, AnswerResponse } from '@/types';
 import { Lightbulb, Send, Trophy, User as UserIcon } from 'lucide-react';
 
 interface PuzzleInterfaceProps {
   uuid: string;
+  user: User;
 }
 
-export default function PuzzleInterface({ uuid }: PuzzleInterfaceProps) {
-  const [currentQuestion, setCurrentQuestion] = useState<SafeQuestion | null>(null);
+export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [progress, setProgress] = useState({ current: 0, total: 0, percentage: 0 });
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({ type: null, message: '' });
@@ -54,18 +54,14 @@ export default function PuzzleInterface({ uuid }: PuzzleInterfaceProps) {
 
       if (data.success) {
         const questionData: QuestionResponse = data.data;
-        
-        // Check if user has completed all questions
-        if (questionData.completed || (questionData.question === null && questionData.progress.percentage === 100)) {
-          setCompleted(true);
-          setCurrentQuestion(null);
-        } else {
-          setCurrentQuestion(questionData.question);
-        }
-        
+        setCurrentQuestion(questionData.question);
         setProgress(questionData.progress);
+        
+        if (questionData.isLastQuestion && questionData.progress.percentage === 100) {
+          setCompleted(true);
+        }
       } else {
-        setFeedback({ type: 'error', message: sanitizeErrorMessage(data.error || 'Failed to load question') });
+        setFeedback({ type: 'error', message: data.error || 'Failed to load question' });
       }
     } catch {
       setFeedback({ type: 'error', message: 'Failed to load question' });
@@ -125,7 +121,7 @@ export default function PuzzleInterface({ uuid }: PuzzleInterfaceProps) {
           setFeedback({ type: 'error', message: '❌ INCORRECT ANSWER. Try again!' });
         }
       } else {
-        setFeedback({ type: 'error', message: sanitizeErrorMessage(data.error || 'Failed to submit answer') });
+        setFeedback({ type: 'error', message: data.error || 'Failed to submit answer' });
       }
     } catch {
       setFeedback({ type: 'error', message: 'Failed to submit answer' });
@@ -166,27 +162,14 @@ export default function PuzzleInterface({ uuid }: PuzzleInterfaceProps) {
           setHintPassword('');
           setHintsRequirePassword(false);
           setFeedback({ type: 'success', message: '🔓 HINTS UNLOCKED!' });
-        } else if (hintData.rateLimited) {
-          setHintsRequirePassword(true);
-          const minutes = Math.floor((hintData.lockTimeRemaining || 0) / 60);
-          const seconds = (hintData.lockTimeRemaining || 0) % 60;
-          setFeedback({ 
-            type: 'error', 
-            message: `🚫 TOO MANY FAILED PASSWORD ATTEMPTS! Hint access locked for ${minutes}m ${seconds}s.` 
-          });
         } else if (hintData.requiresPassword) {
           setHintsRequirePassword(true);
-          setFeedback({ 
-            type: 'warning', 
-            message: hintData.error?.includes('Incorrect password') 
-              ? '❌ INCORRECT PASSWORD! Try again.' 
-              : '🔒 ENCRYPTED HINTS! Password required for hints.' 
-          });
+          setFeedback({ type: 'warning', message: '🔒 ENCRYPTED HINTS! Password required for hints.' });
         } else {
           setFeedback({ type: 'error', message: hintData.error || 'Failed to access hints' });
         }
       } else {
-        setFeedback({ type: 'error', message: sanitizeErrorMessage(data.error || 'Failed to request hints') });
+        setFeedback({ type: 'error', message: data.error || 'Failed to request hints' });
       }
     } catch {
       setFeedback({ type: 'error', message: 'Failed to request hints' });
@@ -228,18 +211,8 @@ export default function PuzzleInterface({ uuid }: PuzzleInterfaceProps) {
             ALL PUZZLES COMPLETED. MAXIMUM ACHIEVEMENT UNLOCKED! 🧠⚡
           </p>
           <div className="bg-green-900/30 border border-green-500/50 rounded-lg p-4 shadow-inner">
-            <p className="text-green-400 font-semibold font-mono">FINAL SCORE: {progress.percentage}%</p>
-            <p className="text-green-300 text-sm mt-1 font-mono">
-              {progress.current} / {progress.total} PUZZLES SOLVED!
-            </p>
-          </div>
-          <div className="mt-6 space-y-2">
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-500 hover:to-emerald-500 transition-all font-mono shadow-lg shadow-green-500/30"
-            >
-              🔄 REFRESH SYSTEM
-            </button>
+            <p className="text-green-400 font-semibold font-mono">FINAL SCORE: 100%</p>
+            <p className="text-green-300 text-sm mt-1 font-mono">ALL {progress.total} PUZZLES SOLVED!</p>
           </div>
           <div className="mt-4 text-xs text-gray-500 font-mono">
             &gt; SYSTEM STATUS: ENLIGHTENED
@@ -258,7 +231,7 @@ export default function PuzzleInterface({ uuid }: PuzzleInterfaceProps) {
             <div className="flex items-center space-x-3">
               <UserIcon className="w-8 h-8 text-cyan-400" />
               <div>
-                <h1 className="text-2xl font-bold text-cyan-300 font-mono tracking-wider">PUZZLE INTERFACE</h1>
+                <h1 className="text-2xl font-bold text-cyan-300 font-mono tracking-wider">PUZZLE USER: {user.name.toUpperCase()}</h1>
                 <p className="text-gray-400 font-mono">&gt; Cognitive enhancement protocol active</p>
               </div>
             </div>
@@ -288,11 +261,12 @@ export default function PuzzleInterface({ uuid }: PuzzleInterfaceProps) {
           <div className="bg-gray-900 border border-purple-500/30 rounded-2xl shadow-lg shadow-purple-500/20 p-8">
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-purple-300 mb-6 leading-relaxed font-mono">
-                &gt; {sanitizeHtml(currentQuestion.text)}
+                &gt; {currentQuestion.text}
               </h2>
               
               {/* Hint Section */}
-              <div className="mb-6">
+              {currentQuestion.hints && currentQuestion.hints.length > 0 && (
+                <div className="mb-6">
                   <button
                     onClick={toggleHint}
                     className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 transition-colors font-mono"
@@ -330,7 +304,7 @@ export default function PuzzleInterface({ uuid }: PuzzleInterfaceProps) {
                         <div className="p-4 bg-yellow-900/30 border-l-4 border-yellow-400 rounded border border-yellow-500/30">
                           <div className="text-yellow-300">
                             {unlockedHints.map((hint, index) => (
-                              <p key={index} className="mb-1 font-mono">⚡ {sanitizeHtml(hint)}</p>
+                              <p key={index} className="mb-1 font-mono">⚡ {hint}</p>
                             ))}
                           </div>
                         </div>
@@ -345,6 +319,7 @@ export default function PuzzleInterface({ uuid }: PuzzleInterfaceProps) {
                     </div>
                   )}
                 </div>
+              )}
             </div>
 
             {/* Answer Input */}

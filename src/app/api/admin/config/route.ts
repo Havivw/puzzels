@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest) {
       }, { status: 403 });
     }
 
-    const { adminUuid, dashboardUuid } = body;
+    const { adminUuid, dashboardUuid, rateLimitConfig } = body;
 
     if (!adminUuid || !dashboardUuid) {
       return NextResponse.json<ApiResponse<null>>({
@@ -80,9 +80,45 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Validate rate limit config if provided
+    if (rateLimitConfig) {
+      const { answerAttempts, hintPasswordAttempts } = rateLimitConfig;
+      
+      if (answerAttempts) {
+        if (typeof answerAttempts.maxFailures !== 'number' || answerAttempts.maxFailures < 1 || answerAttempts.maxFailures > 20) {
+          return NextResponse.json<ApiResponse<null>>({
+            success: false,
+            error: 'Answer attempts maxFailures must be between 1 and 20'
+          }, { status: 400 });
+        }
+        if (typeof answerAttempts.lockTimeMinutes !== 'number' || answerAttempts.lockTimeMinutes < 1 || answerAttempts.lockTimeMinutes > 1440) {
+          return NextResponse.json<ApiResponse<null>>({
+            success: false,
+            error: 'Answer attempts lockTimeMinutes must be between 1 and 1440 (24 hours)'
+          }, { status: 400 });
+        }
+      }
+      
+      if (hintPasswordAttempts) {
+        if (typeof hintPasswordAttempts.maxFailures !== 'number' || hintPasswordAttempts.maxFailures < 1 || hintPasswordAttempts.maxFailures > 20) {
+          return NextResponse.json<ApiResponse<null>>({
+            success: false,
+            error: 'Hint password attempts maxFailures must be between 1 and 20'
+          }, { status: 400 });
+        }
+        if (typeof hintPasswordAttempts.lockTimeMinutes !== 'number' || hintPasswordAttempts.lockTimeMinutes < 1 || hintPasswordAttempts.lockTimeMinutes > 1440) {
+          return NextResponse.json<ApiResponse<null>>({
+            success: false,
+            error: 'Hint password attempts lockTimeMinutes must be between 1 and 1440 (24 hours)'
+          }, { status: 400 });
+        }
+      }
+    }
+
     const newConfig: AdminConfig = {
       adminUuid,
-      dashboardUuid
+      dashboardUuid,
+      rateLimitConfig
     };
 
     const success = await HybridDataManager.updateConfig(newConfig);

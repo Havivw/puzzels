@@ -67,6 +67,16 @@ export interface UserProgress {
 export interface AdminConfig {
   adminUuid: string;
   dashboardUuid: string;
+  rateLimitConfig?: {
+    answerAttempts: {
+      maxFailures: number;      // Default: 3
+      lockTimeMinutes: number;  // Default: 10
+    };
+    hintPasswordAttempts: {
+      maxFailures: number;      // Default: 3  
+      lockTimeMinutes: number;  // Default: 25
+    };
+  };
 }
 
 export interface ApiResponse<T> {

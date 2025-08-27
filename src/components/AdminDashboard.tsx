@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AdminDashboardData, Question, User, HintRoute } from '@/types';
+import { AdminDashboardData, Question, User, HintRoute, AdminConfig } from '@/types';
 import { sanitizeHtml, sanitizeErrorMessage } from '@/lib/security';
 import { Settings, Users, FileText, Plus, Trash2, Edit, Save, X, Copy, ExternalLink, Shield, RefreshCw, Link, Key } from 'lucide-react';
 
@@ -24,6 +24,14 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
   const [hintRoutes, setHintRoutes] = useState<HintRoute[]>([]);
   const [newHintContent, setNewHintContent] = useState('');
   const [newHintExpiresAt, setNewHintExpiresAt] = useState('');
+  const [currentConfig, setCurrentConfig] = useState<AdminConfig | null>(null);
+  const [rateLimitSettings, setRateLimitSettings] = useState({
+    answerMaxFailures: 3,
+    answerLockTimeMinutes: 10,
+    hintPasswordMaxFailures: 3,
+    hintPasswordLockTimeMinutes: 25
+  });
+  const [updatingRateLimit, setUpdatingRateLimit] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -37,6 +45,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
   useEffect(() => {
     if (activeTab === 'rate-limits') {
       fetchUsersWithRateLimits();
+      fetchCurrentConfig();
     }
   }, [activeTab]);
 
@@ -95,7 +104,19 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
       const response = await fetch(`/api/admin/config?uuid=${uuid}`);
       const data = await response.json();
       if (data.success) {
+        setCurrentConfig(data.data);
         setCurrentDashboardUuid(data.data.dashboardUuid);
+        
+        // Load rate limit settings if they exist
+        if (data.data.rateLimitConfig) {
+          const config = data.data.rateLimitConfig;
+          setRateLimitSettings({
+            answerMaxFailures: config.answerAttempts?.maxFailures || 3,
+            answerLockTimeMinutes: config.answerAttempts?.lockTimeMinutes || 10,
+            hintPasswordMaxFailures: config.hintPasswordAttempts?.maxFailures || 3,
+            hintPasswordLockTimeMinutes: config.hintPasswordAttempts?.lockTimeMinutes || 25
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to fetch config:', error);
@@ -198,6 +219,47 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
     } catch (error) {
       console.error('Failed to reset rate limit:', error);
       alert('Failed to reset rate limit');
+    }
+  };
+
+  const updateRateLimit = async () => {
+    if (!confirm('Are you sure you want to update the rate limit configuration? This will apply to all new rate limit evaluations.')) return;
+    
+    setUpdatingRateLimit(true);
+    try {
+      // Get current config and merge with rate limit settings
+      const updatedConfig = {
+        ...currentConfig,
+        rateLimitConfig: {
+          answerAttempts: {
+            maxFailures: rateLimitSettings.answerMaxFailures,
+            lockTimeMinutes: rateLimitSettings.answerLockTimeMinutes
+          },
+          hintPasswordAttempts: {
+            maxFailures: rateLimitSettings.hintPasswordMaxFailures,
+            lockTimeMinutes: rateLimitSettings.hintPasswordLockTimeMinutes
+          }
+        }
+      };
+
+      const response = await fetch(`/api/admin/config?uuid=${uuid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setCurrentConfig(data.data);
+        alert('Rate limit configuration updated successfully!');
+      } else {
+        alert(`Failed to update rate limit configuration: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to update rate limit configuration:', error);
+      alert('Failed to update rate limit configuration');
+    } finally {
+      setUpdatingRateLimit(false);
     }
   };
 
@@ -1017,6 +1079,111 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                   </div>
                 </div>
 
+                {/* Rate Limit Configuration Section */}
+                <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 border border-purple-500/50 rounded-lg p-6 shadow-lg shadow-purple-500/20">
+                  <h4 className="text-lg font-semibold text-purple-300 mb-4 font-mono flex items-center space-x-2">
+                    <Settings className="w-5 h-5" />
+                    <span>RATE LIMIT CONFIGURATION</span>
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Answer Attempts Configuration */}
+                    <div className="bg-gray-800/50 border border-gray-600/50 rounded-lg p-4">
+                      <h5 className="text-purple-300 font-semibold mb-3 font-mono">🔒 ANSWER ATTEMPTS</h5>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm text-gray-300 font-mono mb-1">Max Failures Before Lock</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            value={rateLimitSettings.answerMaxFailures}
+                            onChange={(e) => setRateLimitSettings(prev => ({
+                              ...prev,
+                              answerMaxFailures: parseInt(e.target.value) || 1
+                            }))}
+                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white font-mono focus:border-purple-500 focus:outline-none"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">Current: {rateLimitSettings.answerMaxFailures} failures</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm text-gray-300 font-mono mb-1">Lock Time (Minutes)</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="1440"
+                            value={rateLimitSettings.answerLockTimeMinutes}
+                            onChange={(e) => setRateLimitSettings(prev => ({
+                              ...prev,
+                              answerLockTimeMinutes: parseInt(e.target.value) || 1
+                            }))}
+                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white font-mono focus:border-purple-500 focus:outline-none"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">Current: {rateLimitSettings.answerLockTimeMinutes} minutes</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Hint Password Attempts Configuration */}
+                    <div className="bg-gray-800/50 border border-gray-600/50 rounded-lg p-4">
+                      <h5 className="text-purple-300 font-semibold mb-3 font-mono">🔑 HINT PASSWORD ATTEMPTS</h5>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm text-gray-300 font-mono mb-1">Max Failures Before Lock</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            value={rateLimitSettings.hintPasswordMaxFailures}
+                            onChange={(e) => setRateLimitSettings(prev => ({
+                              ...prev,
+                              hintPasswordMaxFailures: parseInt(e.target.value) || 1
+                            }))}
+                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white font-mono focus:border-purple-500 focus:outline-none"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">Current: {rateLimitSettings.hintPasswordMaxFailures} failures</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm text-gray-300 font-mono mb-1">Lock Time (Minutes)</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="1440"
+                            value={rateLimitSettings.hintPasswordLockTimeMinutes}
+                            onChange={(e) => setRateLimitSettings(prev => ({
+                              ...prev,
+                              hintPasswordLockTimeMinutes: parseInt(e.target.value) || 1
+                            }))}
+                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white font-mono focus:border-purple-500 focus:outline-none"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">Current: {rateLimitSettings.hintPasswordLockTimeMinutes} minutes</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Update Button */}
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      onClick={updateRateLimit}
+                      disabled={updatingRateLimit}
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-lg hover:from-purple-500 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 font-mono shadow-lg shadow-purple-500/30 border border-purple-400/30"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>{updatingRateLimit ? 'UPDATING...' : 'UPDATE RATE LIMIT CONFIG'}</span>
+                    </button>
+                  </div>
+
+                  {/* Current Settings Display */}
+                  <div className="mt-4 p-3 bg-gray-800/30 border border-gray-600/30 rounded text-xs font-mono">
+                    <div className="text-gray-400 mb-1">Current Configuration:</div>
+                    <div className="text-white">
+                      Answer: {rateLimitSettings.answerMaxFailures} failures → {rateLimitSettings.answerLockTimeMinutes}min lock |
+                      Hints: {rateLimitSettings.hintPasswordMaxFailures} failures → {rateLimitSettings.hintPasswordLockTimeMinutes}min lock
+                    </div>
+                  </div>
+                </div>
+
                 {/* Test Section - Always Visible */}
                 <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-500/50 rounded-lg p-6 shadow-lg shadow-green-500/20">
                   <h4 className="text-lg font-semibold text-green-300 mb-4 font-mono flex items-center space-x-2">
@@ -1194,7 +1361,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                     <div className="space-y-2">
                       <h5 className="text-yellow-300 font-semibold">🔒 ANSWER RATE LIMITING</h5>
                       <ul className="text-yellow-200 space-y-1">
-                        <li>• 3 consecutive failures = 10 minute lockout</li>
+                        <li>• {rateLimitSettings.answerMaxFailures} consecutive failures = {rateLimitSettings.answerLockTimeMinutes} minute lockout</li>
                         <li>• Lock automatically expires after time</li>
                         <li>• Admin can manually reset locks</li>
                         <li>• Failures reset on correct answer</li>
@@ -1203,7 +1370,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                     <div className="space-y-2">
                       <h5 className="text-yellow-300 font-semibold">🔑 HINT PASSWORD RATE LIMITING</h5>
                       <ul className="text-yellow-200 space-y-1">
-                        <li>• 3 consecutive failures = 25 minute lockout</li>
+                        <li>• {rateLimitSettings.hintPasswordMaxFailures} consecutive failures = {rateLimitSettings.hintPasswordLockTimeMinutes} minute lockout</li>
                         <li>• Lock automatically expires after time</li>
                         <li>• Admin can manually reset locks</li>
                         <li>• Failures reset on correct password</li>

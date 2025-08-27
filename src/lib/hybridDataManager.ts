@@ -15,6 +15,23 @@ export class HybridDataManager {
     return process.env.NODE_ENV === 'production';
   }
 
+  // Helper to get rate limit configuration with defaults
+  private static async getRateLimitConfig() {
+    try {
+      const config = await this.getConfig();
+      return config.rateLimitConfig || {
+        answerAttempts: { maxFailures: 3, lockTimeMinutes: 10 },
+        hintPasswordAttempts: { maxFailures: 3, lockTimeMinutes: 25 }
+      };
+    } catch (error) {
+      // Return defaults if config fails to load
+      return {
+        answerAttempts: { maxFailures: 3, lockTimeMinutes: 10 },
+        hintPasswordAttempts: { maxFailures: 3, lockTimeMinutes: 25 }
+      };
+    }
+  }
+
   // Questions operations
   static async getQuestions(): Promise<Question[]> {
     try {
@@ -251,17 +268,24 @@ export class HybridDataManager {
         user.rateLimitData = { consecutiveFailures: 0, totalFailures: 0 };
       }
 
+      // Get configurable rate limit settings
+      const rateLimitConfig = await this.getRateLimitConfig();
+      const { maxFailures, lockTimeMinutes } = rateLimitConfig.answerAttempts;
+
       user.rateLimitData.consecutiveFailures += 1;
       user.rateLimitData.totalFailures += 1;
       user.lastActivity = new Date().toISOString();
 
-      if (user.rateLimitData.consecutiveFailures >= 3) {
+      if (user.rateLimitData.consecutiveFailures >= maxFailures) {
         const lockUntil = new Date();
-        lockUntil.setMinutes(lockUntil.getMinutes() + 10);
+        lockUntil.setMinutes(lockUntil.getMinutes() + lockTimeMinutes);
         user.rateLimitData.lockedUntil = lockUntil.toISOString();
         users[userIndex] = user;
         await this.saveUsers(users);
-        return { rateLimited: true, lockTimeRemaining: 600 };
+        return { 
+          rateLimited: true, 
+          lockTimeRemaining: lockTimeMinutes * 60 // Convert minutes to seconds
+        };
       }
 
       users[userIndex] = user;
@@ -340,10 +364,14 @@ export class HybridDataManager {
       user.rateLimitData.hintPasswordFailures += 1;
       user.lastActivity = new Date().toISOString();
       
-      // Check if user should be rate limited (3 consecutive hint password failures)
-      if (user.rateLimitData.hintPasswordFailures >= 3) {
+      // Get configurable rate limit settings for hint passwords
+      const rateLimitConfig = await this.getRateLimitConfig();
+      const { maxFailures, lockTimeMinutes } = rateLimitConfig.hintPasswordAttempts;
+
+      // Check if user should be rate limited
+      if (user.rateLimitData.hintPasswordFailures >= maxFailures) {
         const lockUntil = new Date();
-        lockUntil.setMinutes(lockUntil.getMinutes() + 25); // 25 minute lock for hint passwords
+        lockUntil.setMinutes(lockUntil.getMinutes() + lockTimeMinutes);
         user.rateLimitData.hintPasswordLockedUntil = lockUntil.toISOString();
         
         users[userIndex] = user;
@@ -351,7 +379,7 @@ export class HybridDataManager {
         
         return { 
           rateLimited: true, 
-          lockTimeRemaining: 1500 // 25 minutes in seconds
+          lockTimeRemaining: lockTimeMinutes * 60 // Convert minutes to seconds
         };
       }
       
