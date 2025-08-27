@@ -168,8 +168,16 @@ export interface SecureUser {
   // Deliberately excludes: currentQuestion, completedQuestions, rateLimitData
 }
 
+// Internal validation result with full user data (for server-side API use)
+export interface InternalValidationResult {
+  valid: boolean;
+  role: UserRole | null;
+  user?: User; // Full user object for internal APIs
+}
+
+// Public validation result with secure user data (for client responses)
 export interface ValidationResult {
   valid: boolean;
   role: UserRole | null;
-  user?: SecureUser; // Use secure user type instead of full User
+  user?: SecureUser; // Secure user object for public APIs
 }

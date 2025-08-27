@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, SafeQuestion, QuestionResponse, AnswerResponse } from '@/types';
+import { SecureUser, SafeQuestion, QuestionResponse, AnswerResponse } from '@/types';
 import { Lightbulb, Send, Trophy, User as UserIcon } from 'lucide-react';
 
 interface PuzzleInterfaceProps {
   uuid: string;
-  user: User;
+  user: SecureUser;
 }
 
 export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {

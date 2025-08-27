@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Question, User, AdminConfig, ValidationResult, HintRoute } from '@/types';
+import { Question, User, AdminConfig, InternalValidationResult, HintRoute } from '@/types';
 import { DatabaseManager } from './database';
 
 const DATA_DIR = path.join(process.cwd(), 'src/data');
@@ -199,7 +199,7 @@ export class HybridDataManager {
   }
 
   // Validation operations
-  static async validateUser(uuid: string): Promise<ValidationResult> {
+  static async validateUser(uuid: string): Promise<InternalValidationResult> {
     const config = await this.getConfig();
     
     if (uuid === config.adminUuid) {

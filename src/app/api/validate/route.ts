@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HybridDataManager } from '@/lib/hybridDataManager';
-import { ApiResponse, ValidationResult, SecureUser } from '@/types';
+import { ApiResponse, ValidationResult, SecureUser, InternalValidationResult } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,32 +14,32 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const validation = await HybridDataManager.validateUser(uuid);
+    const internalValidation: InternalValidationResult = await HybridDataManager.validateUser(uuid);
 
-    // Only return user object for user role, and filter sensitive data
+    // Convert internal validation to public validation result (filter sensitive data)
     let validationResult: ValidationResult;
     
-    if (validation.role === 'user' && validation.user) {
+    if (internalValidation.role === 'user' && internalValidation.user) {
       // SECURITY: Only return basic user info, NO progress data
       // Progress must be fetched from /api/question which validates server-side
       const secureUser: SecureUser = {
         uuid: '', // Don't expose actual UUID 
-        name: validation.user.name,
-        createdAt: validation.user.createdAt,
-        lastActivity: validation.user.lastActivity
+        name: internalValidation.user.name,
+        createdAt: internalValidation.user.createdAt,
+        lastActivity: internalValidation.user.lastActivity
         // Deliberately exclude: currentQuestion, completedQuestions, rateLimitData
       };
       
       validationResult = {
-        valid: validation.valid,
-        role: validation.role,
+        valid: internalValidation.valid,
+        role: internalValidation.role,
         user: secureUser
       };
     } else {
       // For admin/dashboard roles, don't include user object
       validationResult = {
-        valid: validation.valid,
-        role: validation.role,
+        valid: internalValidation.valid,
+        role: internalValidation.role,
         user: undefined
       };
     }
