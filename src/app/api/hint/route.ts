@@ -24,8 +24,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check hint password rate limit
+    console.log('[HINT_API] Checking hint password rate limit for user:', uuid);
     const hintRateLimitCheck = await HybridDataManager.checkHintPasswordRateLimit(uuid);
+    console.log('[HINT_API] Rate limit check result:', hintRateLimitCheck);
+    
     if (hintRateLimitCheck.rateLimited) {
+      console.log('[HINT_API] User is rate limited, returning error');
       const response: HintResponse = {
         success: false,
         requiresPassword: true,
@@ -78,7 +82,9 @@ export async function POST(request: NextRequest) {
         });
       } else if (password !== hintPassword) {
         // Password provided but incorrect - count as failure
+        console.log('[HINT_API] Incorrect password provided, updating failure count for user:', uuid);
         const rateLimitResult = await HybridDataManager.updateHintPasswordFailure(uuid);
+        console.log('[HINT_API] Rate limit update result:', rateLimitResult);
         
         const response: HintResponse = {
           success: false,

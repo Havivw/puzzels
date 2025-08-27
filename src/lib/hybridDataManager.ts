@@ -12,7 +12,7 @@ export class HybridDataManager {
 
   // Helper to determine if we're in production
   private static isProduction(): boolean {
-    return process.env.NODE_ENV === 'production';
+    return process.env.NODE_ENV === 'production' || !!process.env.REDIS_URL;
   }
 
   // Helper to get rate limit configuration with defaults

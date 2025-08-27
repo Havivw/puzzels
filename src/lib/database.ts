@@ -49,7 +49,7 @@ export class DatabaseManager {
   // Questions operations
   static async getQuestions(): Promise<Question[]> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const client = await getRedisClient();
         const questions = await client.get(KEYS.QUESTIONS);
         return questions ? JSON.parse(questions) : [];
@@ -63,7 +63,7 @@ export class DatabaseManager {
 
   static async saveQuestions(questions: Question[]): Promise<boolean> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const client = await getRedisClient();
         await client.set(KEYS.QUESTIONS, JSON.stringify(questions));
         return true;
@@ -78,7 +78,7 @@ export class DatabaseManager {
   // Users operations
   static async getUsers(): Promise<User[]> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const client = await getRedisClient();
         const users = await client.get(KEYS.USERS);
         return users ? JSON.parse(users) : [];
@@ -92,7 +92,7 @@ export class DatabaseManager {
 
   static async saveUsers(users: User[]): Promise<boolean> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const client = await getRedisClient();
         await client.set(KEYS.USERS, JSON.stringify(users));
         return true;
@@ -107,7 +107,7 @@ export class DatabaseManager {
   // Config operations
   static async getConfig(): Promise<AdminConfig> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const client = await getRedisClient();
         const config = await client.get(KEYS.CONFIG);
         return config ? JSON.parse(config) : {
@@ -130,7 +130,7 @@ export class DatabaseManager {
 
   static async saveConfig(config: AdminConfig): Promise<boolean> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const client = await getRedisClient();
         await client.set(KEYS.CONFIG, JSON.stringify(config));
         return true;
@@ -145,7 +145,7 @@ export class DatabaseManager {
   // User management operations
   static async addUser(name: string, uuid: string): Promise<boolean> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const users = await this.getUsers();
         const newUser = {
           uuid,
@@ -172,7 +172,7 @@ export class DatabaseManager {
 
   static async removeUser(uuid: string): Promise<boolean> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const users = await this.getUsers();
         const filteredUsers = users.filter(u => u.uuid !== uuid);
         if (filteredUsers.length === users.length) {
@@ -189,7 +189,7 @@ export class DatabaseManager {
 
   static async updateUserProgress(uuid: string, questionId: string): Promise<boolean> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const users = await this.getUsers();
         const userIndex = users.findIndex(u => u.uuid === uuid);
         if (userIndex === -1) return false;
@@ -223,7 +223,7 @@ export class DatabaseManager {
 
   static async updateUserFailure(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining?: number }> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const users = await this.getUsers();
         const userIndex = users.findIndex(u => u.uuid === uuid);
         if (userIndex === -1) return { rateLimited: false };
@@ -266,7 +266,7 @@ export class DatabaseManager {
 
   static async checkRateLimit(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining: number }> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const users = await this.getUsers();
         const user = users.find(u => u.uuid === uuid);
         if (!user || !user.rateLimitData || !user.rateLimitData.lockedUntil) {
@@ -301,14 +301,19 @@ export class DatabaseManager {
   // Hint password rate limiting
   static async updateHintPasswordFailure(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining?: number }> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
+        console.log('[HINT_RATE_LIMIT] Updating hint password failure for user:', uuid);
         const users = await this.getUsers();
         const userIndex = users.findIndex(u => u.uuid === uuid);
-        if (userIndex === -1) return { rateLimited: false };
+        if (userIndex === -1) {
+          console.log('[HINT_RATE_LIMIT] User not found:', uuid);
+          return { rateLimited: false };
+        }
 
         const user = users[userIndex];
         if (!user.rateLimitData) {
           user.rateLimitData = { consecutiveFailures: 0, totalFailures: 0, hintPasswordFailures: 0 };
+          console.log('[HINT_RATE_LIMIT] Initialized rate limit data for user:', uuid);
         }
 
         // Initialize hint password failures if not exists
@@ -316,12 +321,17 @@ export class DatabaseManager {
           user.rateLimitData.hintPasswordFailures = 0;
         }
 
+        const previousFailures = user.rateLimitData.hintPasswordFailures;
         user.rateLimitData.hintPasswordFailures += 1;
         user.lastActivity = new Date().toISOString();
+
+        console.log('[HINT_RATE_LIMIT] Hint password failures:', previousFailures, '->', user.rateLimitData.hintPasswordFailures);
 
         // Get configurable rate limit settings for hint passwords
         const rateLimitConfig = await this.getRateLimitConfig();
         const { maxFailures, lockTimeMinutes } = rateLimitConfig.hintPasswordAttempts;
+
+        console.log('[HINT_RATE_LIMIT] Rate limit config - maxFailures:', maxFailures, 'lockTimeMinutes:', lockTimeMinutes);
 
         // Check if user should be rate limited
         if (user.rateLimitData.hintPasswordFailures >= maxFailures) {
@@ -329,7 +339,12 @@ export class DatabaseManager {
           lockUntil.setMinutes(lockUntil.getMinutes() + lockTimeMinutes);
           user.rateLimitData.hintPasswordLockedUntil = lockUntil.toISOString();
           users[userIndex] = user;
-          await this.saveUsers(users);
+          
+          console.log('[HINT_RATE_LIMIT] User rate limited until:', lockUntil.toISOString());
+          
+          const saveResult = await this.saveUsers(users);
+          console.log('[HINT_RATE_LIMIT] Save users result:', saveResult);
+          
           return { 
             rateLimited: true, 
             lockTimeRemaining: lockTimeMinutes * 60 // Convert minutes to seconds
@@ -337,36 +352,49 @@ export class DatabaseManager {
         }
 
         users[userIndex] = user;
-        await this.saveUsers(users);
+        const saveResult = await this.saveUsers(users);
+        console.log('[HINT_RATE_LIMIT] Save users result (no rate limit):', saveResult);
+        
         return { rateLimited: false };
       }
       return { rateLimited: false };
     } catch (error) {
-      console.error('Error updating hint password failure:', error);
+      console.error('[HINT_RATE_LIMIT] Error updating hint password failure:', error);
       return { rateLimited: false };
     }
   }
 
   static async checkHintPasswordRateLimit(uuid: string): Promise<{ rateLimited: boolean; lockTimeRemaining: number }> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
+        console.log('[HINT_RATE_LIMIT] Checking hint password rate limit for user:', uuid);
         const users = await this.getUsers();
         const user = users.find(u => u.uuid === uuid);
         
-        if (!user || !user.rateLimitData || !user.rateLimitData.hintPasswordLockedUntil) {
+        if (!user) {
+          console.log('[HINT_RATE_LIMIT] User not found:', uuid);
+          return { rateLimited: false, lockTimeRemaining: 0 };
+        }
+        
+        if (!user.rateLimitData || !user.rateLimitData.hintPasswordLockedUntil) {
+          console.log('[HINT_RATE_LIMIT] No rate limit data or lock time for user:', uuid);
           return { rateLimited: false, lockTimeRemaining: 0 };
         }
         
         const lockUntil = new Date(user.rateLimitData.hintPasswordLockedUntil);
         const now = new Date();
         
+        console.log('[HINT_RATE_LIMIT] Lock until:', lockUntil.toISOString(), 'Now:', now.toISOString());
+        
         if (now < lockUntil) {
           const lockTimeRemaining = Math.ceil((lockUntil.getTime() - now.getTime()) / 1000);
+          console.log('[HINT_RATE_LIMIT] User is rate limited. Time remaining:', lockTimeRemaining, 'seconds');
           return { 
             rateLimited: true, 
             lockTimeRemaining 
           };
         } else {
+          console.log('[HINT_RATE_LIMIT] Lock has expired, resetting failures');
           // Lock has expired, reset hint password failures AND answer failures
           const userIndex = users.findIndex(u => u.uuid === uuid);
           if (userIndex !== -1) {
@@ -375,7 +403,8 @@ export class DatabaseManager {
             // Also reset answer failures when hint password lock expires
             users[userIndex].rateLimitData!.consecutiveFailures = 0;
             delete users[userIndex].rateLimitData!.lockedUntil;
-            await this.saveUsers(users);
+            const saveResult = await this.saveUsers(users);
+            console.log('[HINT_RATE_LIMIT] Reset failures save result:', saveResult);
           }
           
           return { rateLimited: false, lockTimeRemaining: 0 };
@@ -383,14 +412,14 @@ export class DatabaseManager {
       }
       return { rateLimited: false, lockTimeRemaining: 0 };
     } catch (error) {
-      console.error('Error checking hint password rate limit:', error);
+      console.error('[HINT_RATE_LIMIT] Error checking hint password rate limit:', error);
       return { rateLimited: false, lockTimeRemaining: 0 };
     }
   }
 
   static async resetHintPasswordFailures(uuid: string): Promise<void> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const users = await this.getUsers();
         const userIndex = users.findIndex(u => u.uuid === uuid);
         
@@ -411,7 +440,7 @@ export class DatabaseManager {
   // Hint routes operations
   static async getHintRoutes(): Promise<HintRoute[]> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const client = await getRedisClient();
         const routes = await client.get(KEYS.HINT_ROUTES);
         return routes ? JSON.parse(routes) : [];
@@ -425,7 +454,7 @@ export class DatabaseManager {
 
   static async saveHintRoutes(routes: HintRoute[]): Promise<boolean> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const client = await getRedisClient();
         await client.set(KEYS.HINT_ROUTES, JSON.stringify(routes));
         return true;
@@ -439,7 +468,7 @@ export class DatabaseManager {
 
   static async addHintRoute(route: HintRoute): Promise<boolean> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const routes = await this.getHintRoutes();
         routes.push(route);
         return await this.saveHintRoutes(routes);
@@ -453,7 +482,7 @@ export class DatabaseManager {
 
   static async removeHintRoute(uuid: string): Promise<boolean> {
     try {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         const routes = await this.getHintRoutes();
         const filteredRoutes = routes.filter(r => r.uuid !== uuid);
         if (filteredRoutes.length === routes.length) {
@@ -471,7 +500,7 @@ export class DatabaseManager {
   // Initialize database with default data
   static async initializeDatabase(): Promise<void> {
     try {
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.NODE_ENV !== 'production' && !process.env.REDIS_URL) {
         return;
       }
 
