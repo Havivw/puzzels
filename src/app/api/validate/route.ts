@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HybridDataManager } from '@/lib/hybridDataManager';
-import { ApiResponse, ValidationResult } from '@/types';
+import { ApiResponse, ValidationResult, SecureUser } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,17 +22,18 @@ export async function GET(request: NextRequest) {
     if (validation.role === 'user' && validation.user) {
       // SECURITY: Only return basic user info, NO progress data
       // Progress must be fetched from /api/question which validates server-side
+      const secureUser: SecureUser = {
+        uuid: '', // Don't expose actual UUID 
+        name: validation.user.name,
+        createdAt: validation.user.createdAt,
+        lastActivity: validation.user.lastActivity
+        // Deliberately exclude: currentQuestion, completedQuestions, rateLimitData
+      };
+      
       validationResult = {
         valid: validation.valid,
         role: validation.role,
-        user: {
-          uuid: '', // Don't expose actual UUID 
-          name: validation.user.name,
-          // REMOVED: currentQuestion, completedQuestions (security risk)
-          createdAt: validation.user.createdAt,
-          lastActivity: validation.user.lastActivity
-          // Deliberately exclude: rateLimitData, actual uuid, progress data
-        }
+        user: secureUser
       };
     } else {
       // For admin/dashboard roles, don't include user object

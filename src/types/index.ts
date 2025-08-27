@@ -159,8 +159,17 @@ export interface AdminDashboardData extends DashboardData {
 
 export type UserRole = 'user' | 'admin' | 'dashboard';
 
+// Secure user data for validation responses (excludes sensitive progress data)
+export interface SecureUser {
+  uuid: string;
+  name: string;
+  createdAt: string;
+  lastActivity: string;
+  // Deliberately excludes: currentQuestion, completedQuestions, rateLimitData
+}
+
 export interface ValidationResult {
   valid: boolean;
   role: UserRole | null;
-  user?: User;
+  user?: SecureUser; // Use secure user type instead of full User
 }
