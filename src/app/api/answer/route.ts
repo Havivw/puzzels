@@ -25,13 +25,39 @@ export async function POST(request: NextRequest) {
 
     const user = validation.user;
     
-    // Check rate limit before processing answer
+    // Check answer rate limit before processing answer
     const rateLimitCheck = await HybridDataManager.checkRateLimit(uuid);
     if (rateLimitCheck.rateLimited) {
       const response: AnswerResponse = {
         correct: false,
         rateLimited: true,
         lockTimeRemaining: rateLimitCheck.lockTimeRemaining,
+        progress: {
+          current: user.currentQuestion,
+          total: 0, // Will be updated below
+          percentage: 0 // Will be updated below
+        }
+      };
+      
+      const questions = await HybridDataManager.getQuestions();
+      response.progress.total = questions.length;
+      response.progress.percentage = Math.round((user.completedQuestions.length / questions.length) * 100);
+      
+      return NextResponse.json<ApiResponse<AnswerResponse>>({
+        success: true,
+        data: response
+      });
+    }
+
+    // SECURITY: Also check hint password rate limit - if user is locked out from hints, they can't answer either
+    const hintRateLimitCheck = await HybridDataManager.checkHintPasswordRateLimit(uuid);
+    if (hintRateLimitCheck.rateLimited) {
+      console.log('[ANSWER_API] SECURITY: User blocked from answering due to hint password rate limit');
+      const response: AnswerResponse = {
+        correct: false,
+        rateLimited: true,
+        lockTimeRemaining: hintRateLimitCheck.lockTimeRemaining,
+        message: 'Account locked due to too many failed hint password attempts. Cannot submit answers.',
         progress: {
           current: user.currentQuestion,
           total: 0, // Will be updated below

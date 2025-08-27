@@ -7,9 +7,8 @@
     "createdAt": "2025-08-21T13:19:02.126Z",
     "lastActivity": "2025-08-27T19:59:38.569Z",
     "rateLimitData": {
-      "consecutiveFailures": 3,
+      "consecutiveFailures": 0,
       "totalFailures": 6,
-      "lockedUntil": "2025-08-21T13:40:52.226Z",
       "hintPasswordFailures": 3,
       "hintPasswordLockedUntil": "2025-08-27T20:24:38.569Z"
     }
@@ -29,11 +28,31 @@
     }
   },
   {
-    "uuid": "user-test-security-123",
-    "name": "SecurityTestUser",
-    "currentQuestion": 3,
-    "completedQuestions": ["q1", "q2"],
-    "createdAt": "2025-08-27T20:15:00.000Z",
-    "lastActivity": "2025-08-27T20:15:00.000Z"
+    "uuid": "user-test-ui-123",
+    "name": "UITestUser",
+    "currentQuestion": 1,
+    "completedQuestions": [],
+    "createdAt": "2025-08-27T20:20:00.000Z",
+    "lastActivity": "2025-08-27T20:16:15.099Z",
+    "rateLimitData": {
+      "consecutiveFailures": 0,
+      "totalFailures": 0,
+      "hintPasswordFailures": 3,
+      "hintPasswordLockedUntil": "2025-08-27T20:41:15.099Z"
+    }
+  },
+  {
+    "uuid": "user-clean-test-456",
+    "name": "CleanTestUser",
+    "currentQuestion": 2,
+    "completedQuestions": [
+      "q1"
+    ],
+    "createdAt": "2025-08-27T20:25:00.000Z",
+    "lastActivity": "2025-08-27T20:18:29.768Z",
+    "rateLimitData": {
+      "consecutiveFailures": 0,
+      "totalFailures": 1
+    }
   }
 ]

@@ -110,9 +110,14 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
           setLockTimeRemaining(answerData.lockTimeRemaining || 0);
           const minutes = Math.floor((answerData.lockTimeRemaining || 0) / 60);
           const seconds = (answerData.lockTimeRemaining || 0) % 60;
+          
+          // Use custom message if provided (for hint password rate limits), otherwise use default
+          const lockMessage = answerData.message || 
+            `🚫 SYSTEM OVERLOAD DETECTED! Too many incorrect attempts. System locked for ${minutes}m ${seconds}s.`;
+          
           setFeedback({ 
-            type: 'warning', 
-            message: `🚫 SYSTEM OVERLOAD DETECTED! Too many incorrect attempts. System locked for ${minutes}m ${seconds}s.` 
+            type: 'error', 
+            message: lockMessage
           });
         } else if (answerData.correct) {
           setFeedback({ type: 'success', message: '🎉 PUZZLE SOLVED! Correct!' });
@@ -175,6 +180,15 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
           setHintPassword('');
           setHintsRequirePassword(false);
           setFeedback({ type: 'success', message: '🔓 HINTS UNLOCKED!' });
+        } else if (hintData.rateLimited) {
+          // Handle rate limiting
+          setRateLimited(true);
+          setLockTimeRemaining(hintData.lockTimeRemaining || 0);
+          setHintsRequirePassword(true);
+          setFeedback({ 
+            type: 'error', 
+            message: `🚫 RATE LIMITED! Too many failed attempts. Wait ${Math.ceil((hintData.lockTimeRemaining || 0) / 60)} minutes.` 
+          });
         } else if (hintData.requiresPassword) {
           setHintsRequirePassword(true);
           setFeedback({ type: 'warning', message: '🔒 ENCRYPTED HINTS! Password required for hints.' });
@@ -299,16 +313,25 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
                               type="password"
                               value={hintPassword}
                               onChange={(e) => setHintPassword(e.target.value)}
-                              onKeyPress={(e) => e.key === 'Enter' && requestHints(hintPassword)}
-                              placeholder="Enter decryption key..."
-                              className="flex-1 px-3 py-2 bg-gray-800 border border-yellow-500/30 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-yellow-300 placeholder-gray-500 font-mono"
+                              onKeyPress={(e) => e.key === 'Enter' && !rateLimited && requestHints(hintPassword)}
+                              placeholder={rateLimited ? "Rate limited - wait..." : "Enter decryption key..."}
+                              disabled={rateLimited}
+                              className={`flex-1 px-3 py-2 bg-gray-800 border rounded-lg font-mono ${
+                                rateLimited 
+                                  ? 'border-red-500/50 text-red-400 placeholder-red-500/50 cursor-not-allowed' 
+                                  : 'border-yellow-500/30 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-yellow-300 placeholder-gray-500'
+                              }`}
                             />
                             <button
-                              onClick={() => requestHints(hintPassword)}
-                              disabled={requestingHint || !hintPassword.trim()}
-                              className="px-4 py-2 bg-yellow-600 text-black rounded-lg hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed font-mono font-bold"
+                              onClick={() => !rateLimited && requestHints(hintPassword)}
+                              disabled={requestingHint || !hintPassword.trim() || rateLimited}
+                              className={`px-4 py-2 rounded-lg font-mono font-bold disabled:opacity-50 disabled:cursor-not-allowed ${
+                                rateLimited
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-yellow-600 text-black hover:bg-yellow-500'
+                              }`}
                             >
-                              {requestingHint ? 'DECRYPTING...' : 'DECRYPT'}
+                              {rateLimited ? `LOCKED ${Math.ceil(lockTimeRemaining / 60)}m` : requestingHint ? 'DECRYPTING...' : 'DECRYPT'}
                             </button>
                           </div>
                         </div>

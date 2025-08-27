@@ -129,6 +129,7 @@ export interface AnswerResponse {
   };
   rateLimited?: boolean;
   lockTimeRemaining?: number; // seconds remaining in lock
+  message?: string; // Optional message for rate limiting or other feedback
 }
 
 export interface DashboardData {
