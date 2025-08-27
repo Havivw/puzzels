@@ -1,10 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Play, Users, Trophy, Brain, Zap, ArrowRight, ExternalLink } from 'lucide-react';
 
 export default function WelcomePage() {
   const [isHovered, setIsHovered] = useState(false);
+  const [dashboardUuid, setDashboardUuid] = useState('dash-52dc-2330-49f1-89e9-00fb6440cd5b'); // fallback
+
+  useEffect(() => {
+    // Fetch dashboard UUID from game state API
+    const fetchDashboardUuid = async () => {
+      try {
+        const response = await fetch('/api/game-state');
+        const data = await response.json();
+        if (data.success && data.data.dashboardUuid) {
+          setDashboardUuid(data.data.dashboardUuid);
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard UUID:', error);
+        // Keep the fallback UUID
+      }
+    };
+
+    fetchDashboardUuid();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center p-4">
@@ -135,7 +154,7 @@ export default function WelcomePage() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
-                onClick={() => window.open('?uuid=dash-52dc-2330-49f1-89e9-00fb6440cd5b', '_blank')}
+                onClick={() => window.open(`?uuid=${dashboardUuid}`, '_blank')}
                 className="bg-gray-800 border border-gray-600 text-gray-300 px-6 py-3 rounded-lg hover:bg-gray-700 hover:border-gray-500 transition-all flex items-center space-x-2 font-mono"
               >
                 <Users className="w-4 h-4" />

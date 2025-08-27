@@ -8,20 +8,22 @@ export async function GET(request: NextRequest) {
     // No authentication required since it only returns the game state
     const config = await HybridDataManager.getConfig();
     
-    return NextResponse.json<ApiResponse<{ gameState: 'coming-soon' | 'active' }>>({
+    return NextResponse.json<ApiResponse<{ gameState: 'coming-soon' | 'active'; dashboardUuid: string }>>({
       success: true,
       data: {
-        gameState: config.gameState || 'coming-soon'
+        gameState: config.gameState || 'coming-soon',
+        dashboardUuid: config.dashboardUuid || 'dash-52dc-2330-49f1-89e9-00fb6440cd5b'
       }
     });
 
   } catch (error) {
     console.error('Game state fetch error:', error);
     // Default to coming-soon on error for security
-    return NextResponse.json<ApiResponse<{ gameState: 'coming-soon' | 'active' }>>({
+    return NextResponse.json<ApiResponse<{ gameState: 'coming-soon' | 'active'; dashboardUuid: string }>>({
       success: true,
       data: {
-        gameState: 'coming-soon'
+        gameState: 'coming-soon',
+        dashboardUuid: 'dash-52dc-2330-49f1-89e9-00fb6440cd5b' // fallback
       }
     });
   }
