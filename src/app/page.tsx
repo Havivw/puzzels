@@ -35,7 +35,8 @@ export default function Home() {
       const data = await response.json();
       
       if (data.success) {
-        setGameState(data.gameState || 'coming-soon');
+        const newGameState = data.data.gameState || 'coming-soon';
+        setGameState(newGameState);
       }
     } catch (error) {
       console.error('Failed to fetch game state:', error);

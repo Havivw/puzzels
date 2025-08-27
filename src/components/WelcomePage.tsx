@@ -41,10 +41,10 @@ export default function WelcomePage() {
         {/* Game Description */}
         <div className="bg-gray-900/50 border border-cyan-500/30 rounded-2xl p-8 shadow-lg shadow-cyan-500/20 backdrop-blur-sm">
           <h2 className="text-2xl font-bold text-cyan-300 mb-4 font-mono">
-            🧠 COGNITIVE ENHANCEMENT CHALLENGE
+            🧩 ESCAPE ROOM CHALLENGE
           </h2>
           <p className="text-gray-300 text-lg leading-relaxed font-mono">
-            Welcome to the ultimate neural puzzle experience. Test your cognitive abilities through a series of 
+            Welcome to the ultimate escape room experience. Test your problem-solving skills through a series of 
             carefully crafted riddles and challenges. Each puzzle will push your mind to new limits while 
             tracking your progress through our advanced monitoring system.
           </p>
@@ -60,8 +60,8 @@ export default function WelcomePage() {
           
           <div className="bg-blue-900/30 border border-blue-500/50 rounded-xl p-6 text-center">
             <Brain className="w-8 h-8 text-cyan-400 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-blue-300 mb-2 font-mono">NEURAL ADAPTATION</h3>
-            <p className="text-gray-400 text-sm font-mono">Puzzles designed to enhance cognitive function and problem-solving</p>
+            <h3 className="text-lg font-semibold text-blue-300 mb-2 font-mono">MIND BENDING PUZZLES</h3>
+            <p className="text-gray-400 text-sm font-mono">Puzzles designed to challenge your logic and problem-solving skills</p>
           </div>
           
           <div className="bg-green-900/30 border border-green-500/50 rounded-xl p-6 text-center">
@@ -74,7 +74,7 @@ export default function WelcomePage() {
         {/* Rules Section */}
         <div className="bg-red-900/20 border border-red-500/50 rounded-2xl p-8 shadow-lg shadow-red-500/20 backdrop-blur-sm mb-8">
           <h2 className="text-2xl font-bold text-red-300 mb-6 font-mono flex items-center justify-center">
-            ⚠️ NEURAL PROTOCOL GUIDELINES ⚠️
+            ⚠️ ESCAPE ROOM PROTOCOL GUIDELINES ⚠️
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300 font-mono">
             <div className="space-y-3">
@@ -110,7 +110,7 @@ export default function WelcomePage() {
               </div>
               <div className="flex items-start space-x-2">
                 <span className="text-red-400 font-bold">08.</span>
-                <p><span className="text-pink-400">COGNITIVE ENHANCEMENT:</span> Think creatively, question everything, but respect the neural protocol.</p>
+                <p><span className="text-pink-400">ESCAPE PROTOCOL:</span> Think creatively, question everything, but respect the game rules.</p>
               </div>
             </div>
           </div>
@@ -118,7 +118,7 @@ export default function WelcomePage() {
             <p className="text-center text-yellow-300 font-mono text-sm">
               🧠 <span className="font-bold">REMEMBER:</span> This is a test of intelligence, creativity, and persistence - not technical exploitation. 
               <br />
-              <span className="text-gray-400">Violators will be tracked, logged, and permanently banned from the neural network.</span>
+              <span className="text-gray-400">Violators will be tracked, logged, and permanently banned from the escape room system.</span>
             </p>
           </div>
         </div>
@@ -130,7 +130,7 @@ export default function WelcomePage() {
               🚀 READY TO BEGIN YOUR JOURNEY?
             </h2>
             <p className="text-gray-300 mb-6 font-mono">
-              Accept the neural protocol guidelines and enter the cognitive enhancement chamber
+              Accept the escape room protocol guidelines and enter the challenge chamber
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -160,7 +160,7 @@ export default function WelcomePage() {
           <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-yellow-300 mb-3 font-mono flex items-center space-x-2">
               <Zap className="w-5 h-5" />
-              <span>⚡ NEURAL INTERFACE INSTRUCTIONS</span>
+              <span>⚡ ESCAPE ROOM INTERFACE INSTRUCTIONS</span>
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-yellow-200 font-mono">
               <div>
@@ -171,7 +171,7 @@ export default function WelcomePage() {
               <div>
                 <p>• Use hint system if you get stuck</p>
                 <p>• Track progress via dashboard link</p>
-                <p>• Complete all challenges for maximum enhancement</p>
+                <p>• Complete all challenges to escape successfully</p>
               </div>
             </div>
           </div>
@@ -179,7 +179,7 @@ export default function WelcomePage() {
 
         {/* Footer */}
         <div className="text-center text-gray-500 text-sm font-mono">
-          <p>&gt; HUSKEYS ESCAPE COGNITIVE ENHANCEMENT PROTOCOL v2.0</p>
+          <p>&gt; HUSKEYS ESCAPE CHALLENGE PROTOCOL v2.0</p>
           <p>&gt; Initiated: {new Date().toLocaleDateString()} | Status: ACTIVE</p>
         </div>
       </div>
