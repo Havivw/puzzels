@@ -20,18 +20,18 @@ export async function GET(request: NextRequest) {
     let validationResult: ValidationResult;
     
     if (validation.role === 'user' && validation.user) {
-      // Return safe user data for puzzle interface (exclude UUID for security)
+      // SECURITY: Only return basic user info, NO progress data
+      // Progress must be fetched from /api/question which validates server-side
       validationResult = {
         valid: validation.valid,
         role: validation.role,
         user: {
           uuid: '', // Don't expose actual UUID 
           name: validation.user.name,
-          currentQuestion: validation.user.currentQuestion,
-          completedQuestions: validation.user.completedQuestions,
+          // REMOVED: currentQuestion, completedQuestions (security risk)
           createdAt: validation.user.createdAt,
           lastActivity: validation.user.lastActivity
-          // Deliberately exclude: rateLimitData, actual uuid
+          // Deliberately exclude: rateLimitData, actual uuid, progress data
         }
       };
     } else {

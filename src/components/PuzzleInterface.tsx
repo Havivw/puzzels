@@ -18,8 +18,10 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
   const [submitting, setSubmitting] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [rateLimited, setRateLimited] = useState(false);
-  const [lockTimeRemaining, setLockTimeRemaining] = useState(0);
+  const [answerRateLimited, setAnswerRateLimited] = useState(false);
+  const [answerLockTimeRemaining, setAnswerLockTimeRemaining] = useState(0);
+  const [hintRateLimited, setHintRateLimited] = useState(false);
+  const [hintLockTimeRemaining, setHintLockTimeRemaining] = useState(0);
   const [unlockedHints, setUnlockedHints] = useState<string[]>([]);
   const [hintPassword, setHintPassword] = useState('');
   const [requestingHint, setRequestingHint] = useState(false);
@@ -29,14 +31,13 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
     fetchCurrentQuestion();
   }, []);
 
-  // Countdown timer for rate limit
+  // Countdown timer for answer rate limit
   useEffect(() => {
-    if (rateLimited && lockTimeRemaining > 0) {
+    if (answerRateLimited && answerLockTimeRemaining > 0) {
       const timer = setInterval(() => {
-        setLockTimeRemaining(prev => {
+        setAnswerLockTimeRemaining(prev => {
           if (prev <= 1) {
-            setRateLimited(false);
-            setFeedback({ type: null, message: '' });
+            setAnswerRateLimited(false);
             return 0;
           }
           return prev - 1;
@@ -45,7 +46,24 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
 
       return () => clearInterval(timer);
     }
-  }, [rateLimited, lockTimeRemaining]);
+  }, [answerRateLimited, answerLockTimeRemaining]);
+
+  // Countdown timer for hint rate limit
+  useEffect(() => {
+    if (hintRateLimited && hintLockTimeRemaining > 0) {
+      const timer = setInterval(() => {
+        setHintLockTimeRemaining(prev => {
+          if (prev <= 1) {
+            setHintRateLimited(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [hintRateLimited, hintLockTimeRemaining]);
 
   // Safety check for user object
   if (!user) {
@@ -106,25 +124,23 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
         const answerData: AnswerResponse = data.data;
         
         if (answerData.rateLimited) {
-          setRateLimited(true);
-          setLockTimeRemaining(answerData.lockTimeRemaining || 0);
+          setAnswerRateLimited(true);
+          setAnswerLockTimeRemaining(answerData.lockTimeRemaining || 0);
           const minutes = Math.floor((answerData.lockTimeRemaining || 0) / 60);
           const seconds = (answerData.lockTimeRemaining || 0) % 60;
           
-          // Use custom message if provided (for hint password rate limits), otherwise use default
-          const lockMessage = answerData.message || 
-            `🚫 SYSTEM OVERLOAD DETECTED! Too many incorrect attempts. System locked for ${minutes}m ${seconds}s.`;
-          
           setFeedback({ 
             type: 'error', 
-            message: lockMessage
+            message: `🚫 ANSWER RATE LIMITED! Too many incorrect attempts. Answers locked for ${minutes}m ${seconds}s.`
           });
         } else if (answerData.correct) {
           setFeedback({ type: 'success', message: '🎉 PUZZLE SOLVED! Correct!' });
           setProgress(answerData.progress);
           setAnswer('');
           setShowHint(false);
-          setRateLimited(false);
+          // Reset rate limits on successful answer
+          setAnswerRateLimited(false);
+          setAnswerLockTimeRemaining(0);
           
           if (answerData.completed) {
             setCompleted(true);
@@ -179,15 +195,18 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
           setUnlockedHints(hintData.hints);
           setHintPassword('');
           setHintsRequirePassword(false);
+          // Reset hint rate limits on successful unlock
+          setHintRateLimited(false);
+          setHintLockTimeRemaining(0);
           setFeedback({ type: 'success', message: '🔓 HINTS UNLOCKED!' });
         } else if (hintData.rateLimited) {
-          // Handle rate limiting
-          setRateLimited(true);
-          setLockTimeRemaining(hintData.lockTimeRemaining || 0);
+          // Handle hint password rate limiting
+          setHintRateLimited(true);
+          setHintLockTimeRemaining(hintData.lockTimeRemaining || 0);
           setHintsRequirePassword(true);
           setFeedback({ 
             type: 'error', 
-            message: `🚫 RATE LIMITED! Too many failed attempts. Wait ${Math.ceil((hintData.lockTimeRemaining || 0) / 60)} minutes.` 
+            message: `🚫 HINT RATE LIMITED! Too many failed password attempts. Hints locked for ${Math.ceil((hintData.lockTimeRemaining || 0) / 60)} minutes.` 
           });
         } else if (hintData.requiresPassword) {
           setHintsRequirePassword(true);
@@ -313,25 +332,25 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
                               type="password"
                               value={hintPassword}
                               onChange={(e) => setHintPassword(e.target.value)}
-                              onKeyPress={(e) => e.key === 'Enter' && !rateLimited && requestHints(hintPassword)}
-                              placeholder={rateLimited ? "Rate limited - wait..." : "Enter decryption key..."}
-                              disabled={rateLimited}
+                              onKeyPress={(e) => e.key === 'Enter' && !hintRateLimited && requestHints(hintPassword)}
+                              placeholder={hintRateLimited ? "Hint rate limited - wait..." : "Enter decryption key..."}
+                              disabled={hintRateLimited}
                               className={`flex-1 px-3 py-2 bg-gray-800 border rounded-lg font-mono ${
-                                rateLimited 
+                                hintRateLimited 
                                   ? 'border-red-500/50 text-red-400 placeholder-red-500/50 cursor-not-allowed' 
                                   : 'border-yellow-500/30 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-yellow-300 placeholder-gray-500'
                               }`}
                             />
                             <button
-                              onClick={() => !rateLimited && requestHints(hintPassword)}
-                              disabled={requestingHint || !hintPassword.trim() || rateLimited}
+                              onClick={() => !hintRateLimited && requestHints(hintPassword)}
+                              disabled={requestingHint || !hintPassword.trim() || hintRateLimited}
                               className={`px-4 py-2 rounded-lg font-mono font-bold disabled:opacity-50 disabled:cursor-not-allowed ${
-                                rateLimited
+                                hintRateLimited
                                   ? 'bg-red-600 text-white'
                                   : 'bg-yellow-600 text-black hover:bg-yellow-500'
                               }`}
                             >
-                              {rateLimited ? `LOCKED ${Math.ceil(lockTimeRemaining / 60)}m` : requestingHint ? 'DECRYPTING...' : 'DECRYPT'}
+                              {hintRateLimited ? `LOCKED ${Math.ceil(hintLockTimeRemaining / 60)}m` : requestingHint ? 'DECRYPTING...' : 'DECRYPT'}
                             </button>
                           </div>
                         </div>
@@ -375,23 +394,23 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
                   />
                   <button
                     onClick={submitAnswer}
-                    disabled={submitting || !answer.trim() || rateLimited}
+                    disabled={submitting || !answer.trim() || answerRateLimited}
                     className={`px-6 py-3 rounded-lg flex items-center space-x-2 transition-all font-mono font-bold shadow-lg ${
-                      rateLimited 
+                      answerRateLimited 
                         ? 'bg-red-600 text-white cursor-not-allowed opacity-75 shadow-red-500/30' 
                         : 'bg-gradient-to-r from-cyan-500 to-purple-500 text-black hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-cyan-500/30'
                     }`}
                   >
                     {submitting ? (
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
-                    ) : rateLimited ? (
+                    ) : answerRateLimited ? (
                       <div className="text-xl">🔒</div>
                     ) : (
                       <Send className="w-5 h-5" />
                     )}
                     <span>
                       {submitting ? 'PROCESSING...' : 
-                       rateLimited ? `LOCKED ${Math.floor(lockTimeRemaining / 60)}:${String(lockTimeRemaining % 60).padStart(2, '0')}` : 
+                       answerRateLimited ? `LOCKED ${Math.floor(answerLockTimeRemaining / 60)}:${String(answerLockTimeRemaining % 60).padStart(2, '0')}` : 
                        'TRANSMIT'}
                     </span>
                   </button>
@@ -408,9 +427,26 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
                     : 'bg-red-900/30 border border-red-500/50 text-red-300 shadow-lg shadow-red-500/20'
                 }`}>
                   {feedback.message}
-                  {rateLimited && (
-                    <div className="mt-2 text-sm">
-                      🕐 SYSTEM COOLDOWN: {Math.floor(lockTimeRemaining / 60)}:{String(lockTimeRemaining % 60).padStart(2, '0')} remaining
+                  
+                  {/* Show independent rate limit statuses */}
+                  {(answerRateLimited || hintRateLimited) && (
+                    <div className="mt-3 space-y-2 text-sm border-t border-gray-600 pt-2">
+                      {answerRateLimited && (
+                        <div className="flex items-center justify-between bg-red-900/30 px-3 py-2 rounded">
+                          <span className="text-red-300">🚫 ANSWERS LOCKED:</span>
+                          <span className="text-red-200 font-mono">
+                            {Math.floor(answerLockTimeRemaining / 60)}:{String(answerLockTimeRemaining % 60).padStart(2, '0')}
+                          </span>
+                        </div>
+                      )}
+                      {hintRateLimited && (
+                        <div className="flex items-center justify-between bg-yellow-900/30 px-3 py-2 rounded">
+                          <span className="text-yellow-300">🔒 HINTS LOCKED:</span>
+                          <span className="text-yellow-200 font-mono">
+                            {Math.floor(hintLockTimeRemaining / 60)}:{String(hintLockTimeRemaining % 60).padStart(2, '0')}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

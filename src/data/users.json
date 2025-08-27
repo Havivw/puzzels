@@ -54,5 +54,65 @@
       "consecutiveFailures": 0,
       "totalFailures": 1
     }
+  },
+  {
+    "uuid": "user-hint-only-locked",
+    "name": "HintOnlyLocked",
+    "currentQuestion": 1,
+    "completedQuestions": [],
+    "createdAt": "2025-08-27T20:30:00.000Z",
+    "lastActivity": "2025-08-27T20:30:00.000Z",
+    "rateLimitData": {
+      "consecutiveFailures": 0,
+      "totalFailures": 0,
+      "hintPasswordFailures": 3,
+      "hintPasswordLockedUntil": "2025-08-27T20:55:00.000Z"
+    }
+  },
+  {
+    "uuid": "user-completely-clean",
+    "name": "CompletelyClean",
+    "currentQuestion": 4,
+    "completedQuestions": [
+      "q1",
+      "q2",
+      "q3"
+    ],
+    "createdAt": "2025-08-27T20:35:00.000Z",
+    "lastActivity": "2025-08-27T20:31:19.452Z",
+    "rateLimitData": {
+      "consecutiveFailures": 0,
+      "totalFailures": 0,
+      "hintPasswordFailures": 3,
+      "hintPasswordLockedUntil": "2025-08-27T20:52:15.769Z"
+    }
+  },
+  {
+    "uuid": "user-answer-locked-only",
+    "name": "AnswerLockedOnly",
+    "currentQuestion": 1,
+    "completedQuestions": [],
+    "createdAt": "2025-08-27T20:40:00.000Z",
+    "lastActivity": "2025-08-27T20:40:00.000Z",
+    "rateLimitData": {
+      "consecutiveFailures": 3,
+      "totalFailures": 3,
+      "lockedUntil": "2025-08-27T20:50:00.000Z"
+    }
+  },
+  {
+    "uuid": "user-both-locked",
+    "name": "BothLocked",
+    "currentQuestion": 1,
+    "completedQuestions": [],
+    "createdAt": "2025-08-27T20:45:00.000Z",
+    "lastActivity": "2025-08-27T20:45:00.000Z",
+    "rateLimitData": {
+      "consecutiveFailures": 3,
+      "totalFailures": 3,
+      "lockedUntil": "2025-08-27T20:55:00.000Z",
+      "hintPasswordFailures": 3,
+      "hintPasswordLockedUntil": "2025-08-27T21:10:00.000Z"
+    }
   }
 ]
