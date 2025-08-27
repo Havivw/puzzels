@@ -23,7 +23,7 @@ export class HybridDataManager {
         answerAttempts: { maxFailures: 3, lockTimeMinutes: 10 },
         hintPasswordAttempts: { maxFailures: 3, lockTimeMinutes: 25 }
       };
-    } catch (error) {
+    } catch {
       // Return defaults if config fails to load
       return {
         answerAttempts: { maxFailures: 3, lockTimeMinutes: 10 },

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Question, QuestionResponse, AnswerResponse } from '@/types';
+import { User, SafeQuestion, QuestionResponse, AnswerResponse } from '@/types';
 import { Lightbulb, Send, Trophy, User as UserIcon } from 'lucide-react';
 
 interface PuzzleInterfaceProps {
@@ -10,7 +10,7 @@ interface PuzzleInterfaceProps {
 }
 
 export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
-  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<SafeQuestion | null>(null);
   const [progress, setProgress] = useState({ current: 0, total: 0, percentage: 0 });
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({ type: null, message: '' });
@@ -265,8 +265,7 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
               </h2>
               
               {/* Hint Section */}
-              {currentQuestion.hints && currentQuestion.hints.length > 0 && (
-                <div className="mb-6">
+              <div className="mb-6">
                   <button
                     onClick={toggleHint}
                     className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 transition-colors font-mono"
@@ -319,7 +318,6 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
                     </div>
                   )}
                 </div>
-              )}
             </div>
 
             {/* Answer Input */}
