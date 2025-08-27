@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HybridDataManager } from '@/lib/hybridDataManager';
-import { ApiResponse, SafeValidationResult } from '@/types';
+import { ApiResponse, ValidationResult } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,16 +16,36 @@ export async function GET(request: NextRequest) {
 
     const validation = await HybridDataManager.validateUser(uuid);
 
-    // Filter out sensitive user data
-    const safeValidation: SafeValidationResult = {
-      valid: validation.valid,
-      role: validation.role
-      // Deliberately exclude: user object
-    };
+    // Only return user object for user role, and filter sensitive data
+    let validationResult: ValidationResult;
+    
+    if (validation.role === 'user' && validation.user) {
+      // Return safe user data for puzzle interface (exclude UUID for security)
+      validationResult = {
+        valid: validation.valid,
+        role: validation.role,
+        user: {
+          uuid: '', // Don't expose actual UUID 
+          name: validation.user.name,
+          currentQuestion: validation.user.currentQuestion,
+          completedQuestions: validation.user.completedQuestions,
+          createdAt: validation.user.createdAt,
+          lastActivity: validation.user.lastActivity
+          // Deliberately exclude: rateLimitData, actual uuid
+        }
+      };
+    } else {
+      // For admin/dashboard roles, don't include user object
+      validationResult = {
+        valid: validation.valid,
+        role: validation.role,
+        user: undefined
+      };
+    }
 
-    return NextResponse.json<ApiResponse<SafeValidationResult>>({
+    return NextResponse.json<ApiResponse<ValidationResult>>({
       success: true,
-      data: safeValidation
+      data: validationResult
     });
 
   } catch (error) {

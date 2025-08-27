@@ -162,7 +162,7 @@ export default function ReadOnlyDashboard({ uuid }: ReadOnlyDashboardProps) {
                       </div>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-cyan-300 font-mono">{user.name.toUpperCase()}</h4>
+                      <h4 className="font-semibold text-cyan-300 font-mono">{user?.name?.toUpperCase() || 'UNKNOWN'}</h4>
                       <p className="text-sm text-gray-400 font-mono">
                         {user.completedCount} OF {user.totalQuestions} PUZZLES COMPLETED
                       </p>

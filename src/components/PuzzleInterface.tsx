@@ -47,6 +47,19 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
     }
   }, [rateLimited, lockTimeRemaining]);
 
+  // Safety check for user object
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-black bg-gradient-to-br from-gray-900 via-black to-red-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-400 text-6xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold text-red-300 mb-4 font-mono">USER DATA ERROR</h1>
+          <p className="text-gray-400 font-mono">User information could not be loaded. Please try again.</p>
+        </div>
+      </div>
+    );
+  }
+
   const fetchCurrentQuestion = async () => {
     try {
       const response = await fetch(`/api/question?uuid=${uuid}`);
@@ -231,7 +244,7 @@ export default function PuzzleInterface({ uuid, user }: PuzzleInterfaceProps) {
             <div className="flex items-center space-x-3">
               <UserIcon className="w-8 h-8 text-cyan-400" />
               <div>
-                <h1 className="text-2xl font-bold text-cyan-300 font-mono tracking-wider">PUZZLE USER: {user.name.toUpperCase()}</h1>
+                <h1 className="text-2xl font-bold text-cyan-300 font-mono tracking-wider">PUZZLE USER: {user?.name?.toUpperCase() || 'UNKNOWN'}</h1>
                 <p className="text-gray-400 font-mono">&gt; Cognitive enhancement protocol active</p>
               </div>
             </div>

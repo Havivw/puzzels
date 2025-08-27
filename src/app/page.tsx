@@ -6,7 +6,8 @@ import PuzzleInterface from '@/components/PuzzleInterface';
 import AdminDashboard from '@/components/AdminDashboard';
 import ReadOnlyDashboard from '@/components/ReadOnlyDashboard';
 import ComingSoonPage from '@/components/ComingSoonPage';
-import { ValidationResult } from '@/types';
+import WelcomePage from '@/components/WelcomePage';
+import { ValidationResult, AdminConfig } from '@/types';
 
 export default function Home() {
   const searchParams = useSearchParams();
@@ -14,16 +15,36 @@ export default function Home() {
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [gameState, setGameState] = useState<'coming-soon' | 'active'>('coming-soon');
 
   useEffect(() => {
     if (!uuid) {
-      // No UUID provided, show coming soon page
-      setLoading(false);
+      // No UUID provided, check game state to determine which page to show
+      fetchGameState();
       return;
     }
 
     validateUser(uuid);
   }, [uuid]);
+
+  const fetchGameState = async () => {
+    try {
+      // We need to get the config without authentication for public access
+      // We'll create a simple endpoint for this
+      const response = await fetch('/api/game-state');
+      const data = await response.json();
+      
+      if (data.success) {
+        setGameState(data.gameState || 'coming-soon');
+      }
+    } catch (error) {
+      console.error('Failed to fetch game state:', error);
+      // Default to coming-soon on error
+      setGameState('coming-soon');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const validateUser = async (userUuid: string) => {
     try {
@@ -42,9 +63,20 @@ export default function Home() {
     }
   };
 
-  // If no UUID provided, show coming soon page
+  // If no UUID provided, show appropriate page based on game state
   if (!uuid) {
-    return <ComingSoonPage />;
+    if (loading) {
+      return (
+        <div className="min-h-screen bg-black bg-gradient-to-br from-gray-900 via-black to-blue-900 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4 shadow-lg shadow-cyan-500/50"></div>
+            <p className="text-cyan-300 font-mono">LOADING SYSTEM...</p>
+          </div>
+        </div>
+      );
+    }
+    
+    return gameState === 'active' ? <WelcomePage /> : <ComingSoonPage />;
   }
 
   if (loading) {

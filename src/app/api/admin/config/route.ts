@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest) {
       }, { status: 403 });
     }
 
-    const { adminUuid, dashboardUuid, rateLimitConfig } = body;
+    const { adminUuid, dashboardUuid, gameState, rateLimitConfig } = body;
 
     if (!adminUuid || !dashboardUuid) {
       return NextResponse.json<ApiResponse<null>>({
@@ -77,6 +77,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
         error: 'Admin and dashboard UUIDs must be different'
+      }, { status: 400 });
+    }
+
+    // Validate game state if provided
+    if (gameState && !['coming-soon', 'active'].includes(gameState)) {
+      return NextResponse.json<ApiResponse<null>>({
+        success: false,
+        error: 'gameState must be either "coming-soon" or "active"'
       }, { status: 400 });
     }
 
@@ -118,6 +126,7 @@ export async function PUT(request: NextRequest) {
     const newConfig: AdminConfig = {
       adminUuid,
       dashboardUuid,
+      gameState,
       rateLimitConfig
     };
 

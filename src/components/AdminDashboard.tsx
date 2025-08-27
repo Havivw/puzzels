@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AdminDashboardData, Question, User, HintRoute, AdminConfig } from '@/types';
 import { sanitizeHtml, sanitizeErrorMessage } from '@/lib/security';
-import { Settings, Users, FileText, Plus, Trash2, Edit, Save, X, Copy, ExternalLink, Shield, RefreshCw, Link, Key } from 'lucide-react';
+import { Settings, Users, FileText, Plus, Trash2, Edit, Save, X, Copy, ExternalLink, Shield, RefreshCw, Link, Key, Play } from 'lucide-react';
 
 interface AdminDashboardProps {
   uuid: string;
@@ -32,6 +32,8 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
     hintPasswordLockTimeMinutes: 25
   });
   const [updatingRateLimit, setUpdatingRateLimit] = useState(false);
+  const [gameState, setGameState] = useState<'coming-soon' | 'active'>('coming-soon');
+  const [updatingGameState, setUpdatingGameState] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -117,6 +119,9 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
             hintPasswordLockTimeMinutes: config.hintPasswordAttempts?.lockTimeMinutes || 25
           });
         }
+        
+        // Load game state
+        setGameState(data.data.gameState || 'coming-soon');
       }
     } catch (error) {
       console.error('Failed to fetch config:', error);
@@ -260,6 +265,44 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
       alert('Failed to update rate limit configuration');
     } finally {
       setUpdatingRateLimit(false);
+    }
+  };
+
+  const updateGameState = async () => {
+    const newState = gameState === 'coming-soon' ? 'active' : 'coming-soon';
+    const confirmMessage = newState === 'active' 
+      ? 'Are you sure you want to ACTIVATE the game? Users will see the welcome page and can start playing.'
+      : 'Are you sure you want to set the game to COMING SOON mode? Users will see a coming soon page.';
+    
+    if (!confirm(confirmMessage)) return;
+    
+    setUpdatingGameState(true);
+    try {
+      // Get current config and merge with new game state
+      const updatedConfig = {
+        ...currentConfig,
+        gameState: newState
+      };
+
+      const response = await fetch(`/api/admin/config?uuid=${uuid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setCurrentConfig(data.data);
+        setGameState(newState);
+        alert(`Game state updated to: ${newState.toUpperCase()}`);
+      } else {
+        alert(`Failed to update game state: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to update game state:', error);
+      alert('Failed to update game state');
+    } finally {
+      setUpdatingGameState(false);
     }
   };
 
@@ -646,7 +689,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                       <tbody className="bg-white divide-y divide-gray-200">
                         {dashboardData.users.map((user) => (
                           <tr key={user.uuid}>
-                            <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{user.name}</td>
+                            <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{user?.name || 'Unknown'}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{user.uuid}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
@@ -795,7 +838,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex space-x-2">
                               <button
-                                onClick={() => copyUserUrl(user.uuid, user.name)}
+                                onClick={() => copyUserUrl(user.uuid, user?.name || 'Unknown')}
                                 className="text-blue-600 hover:text-blue-700"
                                 title="Copy user URL"
                               >
@@ -1228,7 +1271,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                           <div key={user.uuid} className="bg-gray-800 border border-red-500/30 rounded-lg p-4">
                             <div className="flex justify-between items-start mb-3">
                               <div className="flex-1">
-                                <div className="text-lg font-semibold text-white font-mono">{user.name}</div>
+                                <div className="text-lg font-semibold text-white font-mono">{user?.name || 'Unknown'}</div>
                                 <div className="text-sm text-gray-400 font-mono">Rate Limited User</div>
                                 
                                 {/* Answer Rate Limit Status */}
@@ -1317,7 +1360,7 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                         }`}>
                           <div className="flex justify-between items-center">
                             <div className="flex-1">
-                               <div className="text-white font-semibold font-mono">{user.name}</div>
+                               <div className="text-white font-semibold font-mono">{user?.name || 'Unknown'}</div>
                                <div className="text-xs text-gray-400 font-mono">User Status</div>
                               
                               <div className="flex space-x-4 mt-2 text-sm">
@@ -1388,6 +1431,96 @@ export default function AdminDashboard({ uuid }: AdminDashboardProps) {
                   <h3 className="text-lg font-semibold text-cyan-300 font-mono">ACCESS CONTROL URLS</h3>
                   <div className="text-sm text-gray-400 font-mono">
                     🔗 DIRECT SYSTEM ACCESS LINKS
+                  </div>
+                </div>
+
+                {/* Game State Control */}
+                <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/20 border border-orange-500/50 rounded-lg p-6 shadow-lg shadow-orange-500/20">
+                  <h4 className="text-lg font-semibold text-orange-300 mb-4 font-mono flex items-center space-x-2">
+                    <Settings className="w-5 h-5" />
+                    <span>🚀 GAME STATE CONTROL</span>
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Current State Display */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-orange-300 mb-2 font-mono">CURRENT GAME STATE</label>
+                        <div className={`bg-gray-800 border rounded-lg p-4 font-mono ${
+                          gameState === 'active' ? 'border-green-500/50 bg-green-900/20' : 'border-blue-500/50 bg-blue-900/20'
+                        }`}>
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              gameState === 'active' ? 'bg-green-400 animate-pulse' : 'bg-blue-400'
+                            }`}></div>
+                            <span className={`text-lg font-semibold ${
+                              gameState === 'active' ? 'text-green-300' : 'text-blue-300'
+                            }`}>
+                              {gameState === 'active' ? 'GAME ACTIVE' : 'COMING SOON'}
+                            </span>
+                          </div>
+                          <p className={`text-sm mt-2 ${
+                            gameState === 'active' ? 'text-green-200' : 'text-blue-200'
+                          }`}>
+                            {gameState === 'active' 
+                              ? 'Users can access the game and start playing' 
+                              : 'Users see a coming soon page'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-gray-800/50 border border-gray-600/30 rounded-lg">
+                        <h5 className="text-gray-300 font-semibold mb-2 font-mono text-sm">📋 STATE EFFECTS</h5>
+                        <ul className="text-xs text-gray-400 space-y-1 font-mono">
+                          <li>• COMING SOON: Shows marketing/teaser page</li>
+                          <li>• ACTIVE: Shows welcome page + game access</li>
+                          <li>• Changes apply immediately for all users</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Toggle Control */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-orange-300 mb-2 font-mono">TOGGLE GAME STATE</label>
+                        <div className="space-y-3">
+                          <button
+                            onClick={updateGameState}
+                            disabled={updatingGameState}
+                            className={`w-full px-6 py-4 rounded-lg font-mono transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3 shadow-lg ${
+                              gameState === 'coming-soon' 
+                                ? 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-500 hover:to-green-600 shadow-green-500/30' 
+                                : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-500 hover:to-blue-600 shadow-blue-500/30'
+                            }`}
+                          >
+                            {updatingGameState ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <span>UPDATING...</span>
+                              </>
+                            ) : gameState === 'coming-soon' ? (
+                              <>
+                                <Play className="w-5 h-5" />
+                                <span>ACTIVATE GAME</span>
+                              </>
+                            ) : (
+                              <>
+                                <Settings className="w-5 h-5" />
+                                <span>SET TO COMING SOON</span>
+                              </>
+                            )}
+                          </button>
+                          
+                          <div className="text-center">
+                            <p className="text-xs text-orange-300 font-mono">
+                              {gameState === 'coming-soon' 
+                                ? '↑ Click to make the game accessible to users'
+                                : '↑ Click to hide the game behind coming soon page'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

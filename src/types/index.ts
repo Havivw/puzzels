@@ -67,6 +67,7 @@ export interface UserProgress {
 export interface AdminConfig {
   adminUuid: string;
   dashboardUuid: string;
+  gameState?: 'coming-soon' | 'active';  // Default: 'coming-soon'
   rateLimitConfig?: {
     answerAttempts: {
       maxFailures: number;      // Default: 3

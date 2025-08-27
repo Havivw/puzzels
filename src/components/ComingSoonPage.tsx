@@ -52,7 +52,7 @@ export default function ComingSoonPage() {
 
           {/* Main heading */}
           <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 mb-6 font-mono tracking-wider animate-pulse">
-            ENIGMA HUB
+            HUSKEYS ESCAPE
           </h1>
 
           {/* Subtitle */}
@@ -118,7 +118,7 @@ export default function ComingSoonPage() {
           {/* Footer */}
           <div className="mt-16 pt-8 border-t border-gray-800">
             <p className="text-gray-500 text-sm font-mono">
-              © 2025 Enigma Hub Challenge Platform. All rights reserved.
+              © 2025 Huskeys Escape Challenge Platform. All rights reserved.
             </p>
           </div>
         </div>
