@@ -135,18 +135,7 @@ export default function WelcomePage() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
-                onClick={() => window.location.href = '/'}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-                className="bg-gradient-to-r from-cyan-600 to-purple-600 text-white px-8 py-4 rounded-lg hover:from-cyan-500 hover:to-purple-500 transform hover:scale-105 transition-all duration-300 flex items-center space-x-3 font-mono shadow-lg shadow-cyan-500/30 border border-cyan-400/30"
-              >
-                <Play className={`w-5 h-5 ${isHovered ? 'animate-pulse' : ''}`} />
-                <span className="text-lg font-semibold">START PUZZLE SEQUENCE</span>
-                <ArrowRight className="w-5 h-5" />
-              </button>
-              
-              <button
-                onClick={() => window.open('/admin-dashboard-uuid', '_blank')}
+                onClick={() => window.open('?uuid=dash-52dc-2330-49f1-89e9-00fb6440cd5b', '_blank')}
                 className="bg-gray-800 border border-gray-600 text-gray-300 px-6 py-3 rounded-lg hover:bg-gray-700 hover:border-gray-500 transition-all flex items-center space-x-2 font-mono"
               >
                 <Users className="w-4 h-4" />
@@ -164,8 +153,8 @@ export default function WelcomePage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-yellow-200 font-mono">
               <div>
-                <p>• Click &quot;START PUZZLE SEQUENCE&quot; to begin</p>
-                <p>• Enter your participant code when prompted</p>
+                <p>• Get your participant UUID from the escape room host</p>
+                <p>• Enter your UUID in the URL to access puzzles</p>
                 <p>• Solve puzzles in sequential order</p>
               </div>
               <div>
